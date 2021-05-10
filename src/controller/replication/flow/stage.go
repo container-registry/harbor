@@ -16,11 +16,11 @@ package flow
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/goharbor/harbor/src/lib/log"
 	adp "github.com/goharbor/harbor/src/replication/adapter"
 	"github.com/goharbor/harbor/src/replication/model"
-	"github.com/goharbor/harbor/src/replication/util"
 )
 
 // get/create the source registry, destination registry, source adapter and destination adapter
@@ -186,12 +186,13 @@ func getResourceName(res *model.Resource) string {
 }
 
 // repository:c namespace:n -> n/c
-// repository:b/c namespace:n -> n/c
-// repository:a/b/c namespace:n -> n/c
+// a/b/c/d --> ns/b/c/d
+// a/b --> ns/b
 func replaceNamespace(repository string, namespace string) string {
 	if len(namespace) == 0 {
 		return repository
 	}
-	_, rest := util.ParseRepository(repository)
-	return fmt.Sprintf("%s/%s", namespace, rest)
+	tokens := strings.Split(repository,"/")
+	tokens[0] = namespace
+	return strings.Join(tokens,"/")
 }
