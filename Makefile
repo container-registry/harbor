@@ -141,7 +141,7 @@ endef
 
 # docker parameters
 DOCKERCMD=$(shell which docker)
-DOCKERBUILD=$(DOCKERCMD) build
+DOCKERBUILD=$(DOCKERCMD) build --platform linux/x86_64
 DOCKERRMIMAGE=$(DOCKERCMD) rmi
 DOCKERPULL=$(DOCKERCMD) pull
 DOCKERIMAGES=$(DOCKERCMD) images
@@ -303,7 +303,7 @@ ifeq ($(CHARTFLAG), true)
 endif
 
 
-RUNCONTAINER=$(DOCKERCMD) run --rm -u $(shell id -u):$(shell id -g) -v $(BUILDPATH):$(BUILDPATH) -w $(BUILDPATH)
+RUNCONTAINER=$(DOCKERCMD) run --platform linux/x86_64 --rm -u $(shell id -u):$(shell id -g) -v $(BUILDPATH):$(BUILDPATH) -w $(BUILDPATH)
 
 # $1 the name of the docker image
 # $2 the tag of the docker image
