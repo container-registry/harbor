@@ -19,7 +19,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-
 	"github.com/goharbor/harbor/src/common"
 	"github.com/goharbor/harbor/src/jobservice/common/utils"
 	"github.com/goharbor/harbor/src/jobservice/config"

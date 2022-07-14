@@ -42,6 +42,8 @@ type DAO interface {
 	Delete(ctx context.Context, id int64) (err error)
 	// Purge the audit log
 	Purge(ctx context.Context, retentionHour int, includeOperations []string, dryRun bool) (int64, error)
+	// MakeGDPRCompliant
+	MakeGDPRCompliant(ctx context.Context, username string, usernameHashed string) error
 }
 
 // New returns an instance of the default DAO
@@ -56,6 +58,11 @@ var allowedMaps = map[string]interface{}{
 }
 
 type dao struct{}
+
+func (d *dao) MakeGDPRCompliant(ctx context.Context, username string, usernameHashed string) error {
+	//TODO implement me
+	panic("implement me")
+}
 
 // Purge delete expired audit log
 func (*dao) Purge(ctx context.Context, retentionHour int, includeOperations []string, dryRun bool) (int64, error) {

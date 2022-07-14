@@ -38,4 +38,6 @@ const (
 	PurgeAudit = "PURGE_AUDIT"
 	// SystemArtifactCleanup : the name of the SystemArtifact cleanup job
 	SystemArtifactCleanup = "SYSTEM_ARTIFACT_CLEANUP"
+	// AuditLogsGDPRCompliant : the name of the job which makes audit logs table GDPR-compliant
+	AuditLogsGDPRCompliant = "AUDIT_LOGS_GDPR_COMPLIANT"
 )

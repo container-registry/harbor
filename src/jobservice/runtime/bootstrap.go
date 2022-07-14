@@ -17,6 +17,7 @@ package runtime
 import (
 	"context"
 	"fmt"
+	"github.com/goharbor/harbor/src/jobservice/job/impl/gdpr"
 	"os"
 	"os/signal"
 	"strings"
@@ -322,10 +323,11 @@ func (bs *Bootstrap) loadAndRunRedisWorkerPool(
 			// In v2.2 we migrate the scheduled replication, garbage collection and scan all to
 			// the scheduler mechanism, the following three jobs are kept for the legacy jobs
 			// and they can be removed after several releases
-			"IMAGE_REPLICATE":         (*legacy.ReplicationScheduler)(nil),
-			"IMAGE_GC":                (*legacy.GarbageCollectionScheduler)(nil),
-			"IMAGE_SCAN_ALL":          (*legacy.ScanAllScheduler)(nil),
-			job.SystemArtifactCleanup: (*systemartifact.Cleanup)(nil),
+			"IMAGE_REPLICATE":          (*legacy.ReplicationScheduler)(nil),
+			"IMAGE_GC":                 (*legacy.GarbageCollectionScheduler)(nil),
+			"IMAGE_SCAN_ALL":           (*legacy.ScanAllScheduler)(nil),
+			job.SystemArtifactCleanup:  (*systemartifact.Cleanup)(nil),
+			job.AuditLogsGDPRCompliant: (*gdpr.AuditLogsCleanup)(nil),
 		}); err != nil {
 		// exit
 		return nil, err

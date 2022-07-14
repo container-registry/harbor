@@ -119,6 +119,20 @@ func (_m *DAO) List(ctx context.Context, query *q.Query) ([]*model.AuditLog, err
 	return r0, r1
 }
 
+// MakeGDPRCompliant provides a mock function with given fields: ctx, username, usernameHashed
+func (_m *DAO) MakeGDPRCompliant(ctx context.Context, username string, usernameHashed string) error {
+	ret := _m.Called(ctx, username, usernameHashed)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, username, usernameHashed)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Purge provides a mock function with given fields: ctx, retentionHour, includeOperations, dryRun
 func (_m *DAO) Purge(ctx context.Context, retentionHour int, includeOperations []string, dryRun bool) (int64, error) {
 	ret := _m.Called(ctx, retentionHour, includeOperations, dryRun)
