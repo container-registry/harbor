@@ -39,8 +39,8 @@ type Manager interface {
 	Delete(ctx context.Context, id int64) (err error)
 	// Purge delete the audit log with retention hours
 	Purge(ctx context.Context, retentionHour int, includeOperations []string, dryRun bool) (int64, error)
-	//MakeGDPRCompliant Replace all log records usernames with its hashes
-	MakeGDPRCompliant(ctx context.Context, username string) error
+	//UpdateUsername Replace all log records username with its hash
+	UpdateUsername(ctx context.Context, username string, replaceWith string) error
 }
 
 // New returns a default implementation of Manager
@@ -54,11 +54,8 @@ type manager struct {
 	dao dao.DAO
 }
 
-func (m *manager) MakeGDPRCompliant(ctx context.Context, username string) error {
-	// inject crc generation from user manager
-	//
-	// update audit_logs where username = username SET username = hash()
-	return nil
+func (m *manager) UpdateUsername(ctx context.Context, username string, replaceWith string) error {
+	return m.dao.UpdateUsername(ctx, username, replaceWith)
 }
 
 // Count ...

@@ -327,7 +327,7 @@ func (bs *Bootstrap) loadAndRunRedisWorkerPool(
 			"IMAGE_GC":                 (*legacy.GarbageCollectionScheduler)(nil),
 			"IMAGE_SCAN_ALL":           (*legacy.ScanAllScheduler)(nil),
 			job.SystemArtifactCleanup:  (*systemartifact.Cleanup)(nil),
-			job.AuditLogsGDPRCompliant: (*gdpr.AuditLogsCleanup)(nil),
+			job.AuditLogsGDPRCompliant: (*gdpr.AuditLogsDataMasking)(nil),
 		}); err != nil {
 		// exit
 		return nil, err

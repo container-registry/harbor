@@ -118,13 +118,13 @@ func (_m *Manager) List(ctx context.Context, query *q.Query) ([]*model.AuditLog,
 	return r0, r1
 }
 
-// MakeGDPRCompliant provides a mock function with given fields: ctx, username
-func (_m *Manager) MakeGDPRCompliant(ctx context.Context, username string) error {
-	ret := _m.Called(ctx, username)
+// UpdateUsername provides a mock function with given fields: ctx, username, replaceWith
+func (_m *Manager) UpdateUsername(ctx context.Context, username string, replaceWith string) error {
+	ret := _m.Called(ctx, username, replaceWith)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, username)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, username, replaceWith)
 	} else {
 		r0 = ret.Error(0)
 	}
