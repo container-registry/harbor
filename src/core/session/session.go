@@ -23,6 +23,7 @@ import (
 
 	"github.com/beego/beego/session"
 	goredis "github.com/go-redis/redis/v8"
+
 	"github.com/goharbor/harbor/src/lib/cache"
 	"github.com/goharbor/harbor/src/lib/cache/redis"
 	"github.com/goharbor/harbor/src/lib/log"
@@ -35,8 +36,8 @@ const (
 
 var harborpder = &Provider{}
 
-// SessionStore redis session store
-type SessionStore struct {
+// Store redis session store
+type Store struct {
 	c           cache.Cache
 	sid         string
 	lock        sync.RWMutex
@@ -45,7 +46,7 @@ type SessionStore struct {
 }
 
 // Set value in redis session
-func (rs *SessionStore) Set(key, value interface{}) error {
+func (rs *Store) Set(key, value interface{}) error {
 	rs.lock.Lock()
 	defer rs.lock.Unlock()
 	rs.values[key] = value
@@ -53,7 +54,7 @@ func (rs *SessionStore) Set(key, value interface{}) error {
 }
 
 // Get value in redis session
-func (rs *SessionStore) Get(key interface{}) interface{} {
+func (rs *Store) Get(key interface{}) interface{} {
 	rs.lock.RLock()
 	defer rs.lock.RUnlock()
 	if v, ok := rs.values[key]; ok {
@@ -63,7 +64,7 @@ func (rs *SessionStore) Get(key interface{}) interface{} {
 }
 
 // Delete value in redis session
-func (rs *SessionStore) Delete(key interface{}) error {
+func (rs *Store) Delete(key interface{}) error {
 	rs.lock.Lock()
 	defer rs.lock.Unlock()
 	delete(rs.values, key)
@@ -71,7 +72,7 @@ func (rs *SessionStore) Delete(key interface{}) error {
 }
 
 // Flush clear all values in redis session
-func (rs *SessionStore) Flush() error {
+func (rs *Store) Flush() error {
 	rs.lock.Lock()
 	defer rs.lock.Unlock()
 	rs.values = make(map[interface{}]interface{})
@@ -79,12 +80,12 @@ func (rs *SessionStore) Flush() error {
 }
 
 // SessionID get redis session id
-func (rs *SessionStore) SessionID() string {
+func (rs *Store) SessionID() string {
 	return rs.sid
 }
 
 // SessionRelease save session values to redis
-func (rs *SessionStore) SessionRelease(w http.ResponseWriter) {
+func (rs *Store) SessionRelease(w http.ResponseWriter) {
 	b, err := session.EncodeGob(rs.values)
 	if err != nil {
 		return
@@ -123,7 +124,7 @@ func (rp *Provider) SessionRead(sid string) (session.Store, error) {
 		return nil, err
 	}
 
-	rs := &SessionStore{c: rp.c, sid: sid, values: kv, maxlifetime: rp.maxlifetime}
+	rs := &Store{c: rp.c, sid: sid, values: kv, maxlifetime: rp.maxlifetime}
 	return rs, nil
 }
 
@@ -138,7 +139,7 @@ func (rp *Provider) SessionRegenerate(oldsid, sid string) (session.Store, error)
 	if !rp.SessionExist(oldsid) {
 		err := rp.c.Save(ctx, sid, "", time.Duration(rp.maxlifetime))
 		if err != nil {
-			log.Warningf("failed to save sid=%s, where oldsid=%s, error: %s", sid, oldsid, err)
+			log.Debugf("failed to save sid=%s, where oldsid=%s, error: %s", sid, oldsid, err)
 		}
 	} else {
 		if rdb, ok := rp.c.(*redis.Cache); ok {
@@ -154,11 +155,11 @@ func (rp *Provider) SessionRegenerate(oldsid, sid string) (session.Store, error)
 
 			err = rp.c.Delete(ctx, oldsid)
 			if err != nil {
-				log.Warningf("failed to delete oldsid=%s, error: %s", oldsid, err)
+				log.Debugf("failed to delete oldsid=%s, error: %s", oldsid, err)
 			}
 			err = rp.c.Save(ctx, sid, kv)
 			if err != nil {
-				log.Warningf("failed to save sid=%s, error: %s", sid, err)
+				log.Debugf("failed to save sid=%s, error: %s", sid, err)
 			}
 		}
 	}

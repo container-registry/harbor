@@ -31,12 +31,13 @@ import (
 	"github.com/goharbor/harbor/src/pkg/artifactrash/model"
 	"github.com/goharbor/harbor/src/pkg/blob"
 	blobModels "github.com/goharbor/harbor/src/pkg/blob/models"
+	"github.com/goharbor/harbor/src/pkg/registry/interceptor/readonly"
 	"github.com/goharbor/harbor/src/registryctl/client"
 )
 
 var (
 	regCtlInit = registryctl.Init
-	stopErr    = errors.New("stopped")
+	errGcStop  = errors.New("stopped")
 )
 
 const (
@@ -153,7 +154,7 @@ func (gc *GarbageCollector) Run(ctx job.Context, params job.Parameters) error {
 
 	// mark
 	if err := gc.mark(ctx); err != nil {
-		if err == stopErr {
+		if err == errGcStop {
 			gc.logger.Info("received the stop signal, quit GC job.")
 			return nil
 		}
@@ -164,7 +165,7 @@ func (gc *GarbageCollector) Run(ctx job.Context, params job.Parameters) error {
 	// sweep
 	if !gc.dryRun {
 		if err := gc.sweep(ctx); err != nil {
-			if err == stopErr {
+			if err == errGcStop {
 				// we may already delete several artifacts before receiving the stop signal, so try to clean up the cache
 				gc.logger.Info("received the stop signal, quit GC job after cleaning up the cache.")
 				return gc.cleanCache()
@@ -221,7 +222,7 @@ func (gc *GarbageCollector) mark(ctx job.Context) error {
 	for _, blob := range blobs {
 		if !gc.dryRun {
 			if gc.shouldStop(ctx) {
-				return stopErr
+				return errGcStop
 			}
 			blob.Status = blobModels.StatusDelete
 			count, err := gc.blobMgr.UpdateBlobStatus(ctx.SystemContext(), blob)
@@ -259,7 +260,7 @@ func (gc *GarbageCollector) sweep(ctx job.Context) error {
 	total := len(gc.deleteSet)
 	for i, blob := range gc.deleteSet {
 		if gc.shouldStop(ctx) {
-			return stopErr
+			return errGcStop
 		}
 		idx := i + 1
 		// set the status firstly, if the blob is updated by any HEAD/PUT request, it should be fail and skip.
@@ -289,6 +290,10 @@ func (gc *GarbageCollector) sweep(ctx job.Context) error {
 						gc.logger.Errorf("[%d/%d] failed to call gc.markDeleteFailed() after v2DeleteManifest() error out: %s, %v", idx, total, blob.Digest, err)
 						return err
 					}
+					// if the system is set to read-only mode, return directly
+					if err == readonly.Err {
+						return err
+					}
 					skippedBlob = true
 					continue
 				}
@@ -296,7 +301,12 @@ func (gc *GarbageCollector) sweep(ctx job.Context) error {
 				gc.logger.Infof("[%d/%d] delete manifest from storage: %s", idx, total, blob.Digest)
 				if err := retry.Retry(func() error {
 					return ignoreNotFound(func() error {
-						return gc.registryCtlClient.DeleteManifest(art.RepositoryName, blob.Digest)
+						err := gc.registryCtlClient.DeleteManifest(art.RepositoryName, blob.Digest)
+						// if the system is in read-only mode, return an Abort error to skip retrying
+						if err == readonly.Err {
+							return retry.Abort(err)
+						}
+						return err
 					})
 				}, retry.Callback(func(err error, sleep time.Duration) {
 					gc.logger.Infof("[%d/%d] failed to exec DeleteManifest, error: %v, will retry again after: %s", idx, total, err, sleep)
@@ -306,6 +316,10 @@ func (gc *GarbageCollector) sweep(ctx job.Context) error {
 						return gc.markDeleteFailed(ctx, blob)
 					}); err != nil {
 						gc.logger.Errorf("[%d/%d] failed to call gc.markDeleteFailed() after gc.registryCtlClient.DeleteManifest() error out: %s, %s, %v", idx, total, art.RepositoryName, blob.Digest, err)
+						return err
+					}
+					// if the system is set to read-only mode, return directly
+					if err == readonly.Err {
 						return err
 					}
 					skippedBlob = true
@@ -333,7 +347,12 @@ func (gc *GarbageCollector) sweep(ctx job.Context) error {
 			gc.logger.Infof("[%d/%d] delete blob from storage: %s", idx, total, blob.Digest)
 			if err := retry.Retry(func() error {
 				return ignoreNotFound(func() error {
-					return gc.registryCtlClient.DeleteBlob(blob.Digest)
+					err := gc.registryCtlClient.DeleteBlob(blob.Digest)
+					// if the system is in read-only mode, return an Abort error to skip retrying
+					if err == readonly.Err {
+						return retry.Abort(err)
+					}
+					return err
 				})
 			}, retry.Callback(func(err error, sleep time.Duration) {
 				gc.logger.Infof("[%d/%d] failed to exec DeleteBlob, error: %v, will retry again after: %s", idx, total, err, sleep)
@@ -343,6 +362,10 @@ func (gc *GarbageCollector) sweep(ctx job.Context) error {
 					return gc.markDeleteFailed(ctx, blob)
 				}); err != nil {
 					gc.logger.Errorf("[%d/%d] failed to call gc.markDeleteFailed() after gc.registryCtlClient.DeleteBlob() error out: %s, %v", idx, total, blob.Digest, err)
+					return err
+				}
+				// if the system is set to read-only mode, return directly
+				if err == readonly.Err {
 					return err
 				}
 				continue
@@ -446,7 +469,7 @@ func (gc *GarbageCollector) deletedArt(ctx job.Context) (map[string][]model.Arti
 				allTrashedArts = append(allTrashedArts, simulateDeletion)
 			} else {
 				if gc.shouldStop(ctx) {
-					return nil, stopErr
+					return nil, errGcStop
 				}
 				if err := gc.artCtl.Delete(ctx.SystemContext(), untagged.ID); err != nil {
 					// the failure ones can be GCed by the next execution
@@ -496,7 +519,7 @@ func (gc *GarbageCollector) markOrSweepUntaggedBlobs(ctx job.Context) ([]*blobMo
 	var orphanBlobs []*blobModels.Blob
 	for result := range project.ListAll(ctx.SystemContext(), 50, nil, project.Metadata(false)) {
 		if gc.shouldStop(ctx) {
-			return nil, stopErr
+			return nil, errGcStop
 		}
 		if result.Error != nil {
 			gc.logger.Errorf("remove untagged blobs for all projects got error: %v", result.Error)
@@ -513,7 +536,7 @@ func (gc *GarbageCollector) markOrSweepUntaggedBlobs(ctx job.Context) ([]*blobMo
 		for {
 			if gc.shouldStop(ctx) {
 				gc.logger.Info("received the stop signal, quit GC job.")
-				return nil, stopErr
+				return nil, errGcStop
 			}
 			blobRG := q.Range{
 				Min: lastBlobID,

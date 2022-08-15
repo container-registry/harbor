@@ -23,9 +23,10 @@ import (
 	"testing"
 
 	o "github.com/beego/beego/orm"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/goharbor/harbor/src/lib/orm"
 	"github.com/goharbor/harbor/src/server/middleware"
-	"github.com/stretchr/testify/assert"
 )
 
 type mockOrmer struct {
@@ -148,7 +149,7 @@ func TestMustCommit(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	committableCtx := context.WithValue(ctx, committedKey{}, new(bool))
+	committableCtx := context.WithValue(ctx, orm.CommittedKey{}, new(bool))
 
 	type args struct {
 		r *http.Request

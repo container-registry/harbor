@@ -216,4 +216,6 @@ const (
 	AuditLogForwardEndpoint = "audit_log_forward_endpoint"
 	// SkipAuditLogDatabase skip to log audit log in database
 	SkipAuditLogDatabase = "skip_audit_log_database"
+	// MaxAuditRetentionHour allowed in audit log purge
+	MaxAuditRetentionHour = 240000
 )

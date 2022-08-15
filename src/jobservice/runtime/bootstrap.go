@@ -25,7 +25,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/goharbor/harbor/src/jobservice/job/impl/systemartifact"
+	"github.com/gomodule/redigo/redis"
 
 	"github.com/goharbor/harbor/src/jobservice/api"
 	"github.com/goharbor/harbor/src/jobservice/common/utils"
@@ -41,6 +41,8 @@ import (
 	"github.com/goharbor/harbor/src/jobservice/job/impl/purge"
 	"github.com/goharbor/harbor/src/jobservice/job/impl/replication"
 	"github.com/goharbor/harbor/src/jobservice/job/impl/sample"
+	"github.com/goharbor/harbor/src/jobservice/job/impl/scandataexport"
+	"github.com/goharbor/harbor/src/jobservice/job/impl/systemartifact"
 	"github.com/goharbor/harbor/src/jobservice/lcm"
 	"github.com/goharbor/harbor/src/jobservice/logger"
 	"github.com/goharbor/harbor/src/jobservice/mgt"
@@ -57,7 +59,6 @@ import (
 	"github.com/goharbor/harbor/src/pkg/scan"
 	"github.com/goharbor/harbor/src/pkg/scheduler"
 	"github.com/goharbor/harbor/src/pkg/task"
-	"github.com/gomodule/redigo/redis"
 )
 
 const (
@@ -320,6 +321,7 @@ func (bs *Bootstrap) loadAndRunRedisWorkerPool(
 			job.WebhookJob:             (*notification.WebhookJob)(nil),
 			job.SlackJob:               (*notification.SlackJob)(nil),
 			job.P2PPreheat:             (*preheat.Job)(nil),
+			job.ScanDataExport:         (*scandataexport.ScanDataExport)(nil),
 			// In v2.2 we migrate the scheduled replication, garbage collection and scan all to
 			// the scheduler mechanism, the following three jobs are kept for the legacy jobs
 			// and they can be removed after several releases

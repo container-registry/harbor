@@ -20,6 +20,7 @@ import (
 	"net/http"
 
 	rmiddleware "github.com/go-openapi/runtime/middleware"
+
 	lib_http "github.com/goharbor/harbor/src/lib/http"
 	"github.com/goharbor/harbor/src/server/middleware"
 	"github.com/goharbor/harbor/src/server/middleware/blob"
@@ -65,6 +66,7 @@ func New() http.Handler {
 		StatisticAPI:          newStatisticAPI(),
 		ProjectMetadataAPI:    newProjectMetadaAPI(),
 		PurgeAPI:              newPurgeAPI(),
+		ScanDataExportAPI:     newScanDataExportAPI(),
 	})
 	if err != nil {
 		log.Fatal(err)

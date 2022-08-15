@@ -1,16 +1,16 @@
-//  Copyright Project Harbor Authors
+// Copyright Project Harbor Authors
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//    http://www.apache.org/licenses/LICENSE-2.0
 //
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package dao
 
@@ -205,6 +205,10 @@ func (e *executionDAO) RefreshStatus(ctx context.Context, id int64) (bool, strin
 // 3. bool: whether a retry is needed
 // 4. error: the error
 func (e *executionDAO) refreshStatus(ctx context.Context, id int64) (bool, string, bool, error) {
+	execution, err := e.Get(ctx, id)
+	if err != nil {
+		return false, "", false, err
+	}
 	metrics, err := e.GetMetrics(ctx, id)
 	if err != nil {
 		return false, "", false, err
@@ -223,14 +227,6 @@ func (e *executionDAO) refreshStatus(ctx context.Context, id int64) (bool, strin
 		status = job.StoppedStatus.String()
 	} else if metrics.SuccessTaskCount > 0 {
 		status = job.SuccessStatus.String()
-	}
-
-	execution, err := e.Get(ctx, id)
-	if err != nil {
-		return false, "", false, err
-	}
-	if status == execution.Status {
-		return false, status, false, nil // status not changed
 	}
 
 	ormer, err := orm.FromContext(ctx)
@@ -351,7 +347,7 @@ func (e *executionDAO) querySetter(ctx context.Context, query *q.Query) (orm.Que
 			args = append(args, item)
 		}
 		args = append(args, value)
-		inClause, err := orm.CreateInClause(ctx, buildInClauseSqlForExtraAttrs(keys), args...)
+		inClause, err := orm.CreateInClause(ctx, buildInClauseSQLForExtraAttrs(keys), args...)
 		if err != nil {
 			return nil, err
 		}
@@ -362,7 +358,7 @@ func (e *executionDAO) querySetter(ctx context.Context, query *q.Query) (orm.Que
 }
 
 // Param keys is strings.Split() after trim "extra_attrs."/"ExtraAttrs." prefix
-func buildInClauseSqlForExtraAttrs(keys []string) string {
+func buildInClauseSQLForExtraAttrs(keys []string) string {
 	switch len(keys) {
 	case 0:
 		// won't fall into this case, as the if condition on "keyPrefix == key"

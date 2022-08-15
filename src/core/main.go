@@ -18,6 +18,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
@@ -25,10 +26,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/goharbor/harbor/src/controller/systemartifact"
-
 	"github.com/beego/beego"
-	"github.com/goharbor/harbor/src/core/session"
 
 	"github.com/goharbor/harbor/src/common/dao"
 	common_http "github.com/goharbor/harbor/src/common/http"
@@ -36,6 +34,7 @@ import (
 	_ "github.com/goharbor/harbor/src/controller/event/handler"
 	"github.com/goharbor/harbor/src/controller/health"
 	"github.com/goharbor/harbor/src/controller/registry"
+	"github.com/goharbor/harbor/src/controller/systemartifact"
 	"github.com/goharbor/harbor/src/core/api"
 	_ "github.com/goharbor/harbor/src/core/auth/authproxy"
 	_ "github.com/goharbor/harbor/src/core/auth/db"
@@ -44,6 +43,7 @@ import (
 	_ "github.com/goharbor/harbor/src/core/auth/uaa"
 	"github.com/goharbor/harbor/src/core/middlewares"
 	"github.com/goharbor/harbor/src/core/service/token"
+	"github.com/goharbor/harbor/src/core/session"
 	"github.com/goharbor/harbor/src/lib/cache"
 	_ "github.com/goharbor/harbor/src/lib/cache/memory" // memory cache
 	_ "github.com/goharbor/harbor/src/lib/cache/redis"  // redis cache
@@ -51,8 +51,11 @@ import (
 	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/lib/metric"
 	"github.com/goharbor/harbor/src/lib/orm"
+	"github.com/goharbor/harbor/src/lib/retry"
 	tracelib "github.com/goharbor/harbor/src/lib/trace"
 	"github.com/goharbor/harbor/src/migration"
+	_ "github.com/goharbor/harbor/src/pkg/accessory/model/base"
+	_ "github.com/goharbor/harbor/src/pkg/accessory/model/cosign"
 	"github.com/goharbor/harbor/src/pkg/audit"
 	dbCfg "github.com/goharbor/harbor/src/pkg/config/db"
 	_ "github.com/goharbor/harbor/src/pkg/config/inmemory"
@@ -233,7 +236,25 @@ func main() {
 	if err != nil {
 		log.Warningf("oidc.FixEmptySubIss() errors out, error: %v", err)
 	}
-	systemartifact.ScheduleCleanupTask(ctx)
+	// Scheduling of system artifact depends on the jobservice, where gorountine is used to avoid the circular
+	// dependencies between core and jobservice.
+	go func() {
+		url := config.InternalJobServiceURL() + "/api/v1/stats"
+		checker := health.HTTPStatusCodeHealthChecker(http.MethodGet, url, nil, 60*time.Second, http.StatusOK)
+		options := []retry.Option{
+			retry.InitialInterval(time.Millisecond * 500),
+			retry.MaxInterval(time.Second * 10),
+			retry.Timeout(time.Minute),
+			retry.Callback(func(err error, sleep time.Duration) {
+				log.Debugf("failed to ping %s, retry after %s : %v", url, sleep, err)
+			}),
+		}
+		if err := retry.Retry(checker.Check, options...); err != nil {
+			log.Errorf("failed to check the jobservice health status: timeout, error: %v", err)
+			return
+		}
+		systemartifact.ScheduleCleanupTask(ctx)
+	}()
 	beego.RunWithMiddleWares("", middlewares.MiddleWares()...)
 }
 

@@ -40,4 +40,6 @@ const (
 	SystemArtifactCleanup = "SYSTEM_ARTIFACT_CLEANUP"
 	// AuditLogsGDPRCompliant : the name of the job which makes audit logs table GDPR-compliant
 	AuditLogsGDPRCompliant = "AUDIT_LOGS_GDPR_COMPLIANT"
+	// ScanDataExport : the name of the scan data export job
+	ScanDataExport = "SCAN_DATA_EXPORT"
 )

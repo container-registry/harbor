@@ -4,6 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/suite"
+
 	"github.com/goharbor/harbor/src/lib/orm"
 	"github.com/goharbor/harbor/src/lib/q"
 	"github.com/goharbor/harbor/src/pkg/systemartifact/model"
@@ -12,12 +20,6 @@ import (
 	registrytesting "github.com/goharbor/harbor/src/testing/pkg/registry"
 	"github.com/goharbor/harbor/src/testing/pkg/systemartifact/cleanup"
 	sysartifactdaotesting "github.com/goharbor/harbor/src/testing/pkg/systemartifact/dao"
-	"github.com/stretchr/testify/suite"
-	"io/ioutil"
-	"os"
-	"strings"
-	"testing"
-	"time"
 )
 
 type ManagerTestSuite struct {
@@ -61,6 +63,24 @@ func (suite *ManagerTestSuite) TestCreate() {
 	suite.Equalf(int64(1), id, "Expected row to correctly inserted")
 	suite.NoErrorf(err, "Unexpected error when creating artifact: %v", err)
 	suite.regCli.AssertCalled(suite.T(), "PushBlob")
+}
+
+func (suite *ManagerTestSuite) TestCreateTimeNotSet() {
+	sa := model.SystemArtifact{
+		Repository: "test_repo",
+		Digest:     "test_digest",
+		Size:       int64(100),
+		Vendor:     "test_vendor",
+		Type:       "test_type",
+	}
+	suite.dao.On("Create", mock.Anything, &sa, mock.Anything).Return(int64(1), nil).Once()
+	suite.regCli.On("PushBlob", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+	reader := strings.NewReader("test data string")
+	id, err := suite.mgr.Create(orm.NewContext(nil, &ormtesting.FakeOrmer{}), &sa, reader)
+	suite.Equalf(int64(1), id, "Expected row to correctly inserted")
+	suite.NoErrorf(err, "Unexpected error when creating artifact: %v", err)
+	suite.regCli.AssertCalled(suite.T(), "PushBlob")
+	suite.False(sa.CreateTime.IsZero(), "Create time expected to be set")
 }
 
 func (suite *ManagerTestSuite) TestCreatePushBlobFails() {
@@ -171,7 +191,7 @@ func (suite *ManagerTestSuite) TestDelete() {
 
 	suite.NoErrorf(err, "Unexpected error when deleting artifact: %v", err)
 	suite.dao.AssertCalled(suite.T(), "Delete", mock.Anything, "test_vendor", "test_repo", "test_digest")
-	suite.regCli.AssertCalled(suite.T(), "DeleteBlob")
+	suite.regCli.AssertCalled(suite.T(), "DeleteBlob", "sys_harb0r/test_vendor/test_repo", "test_digest")
 }
 
 func (suite *ManagerTestSuite) TestDeleteSystemArtifactDeleteError() {
@@ -184,7 +204,7 @@ func (suite *ManagerTestSuite) TestDeleteSystemArtifactDeleteError() {
 
 	suite.Errorf(err, "Expected error when deleting artifact: %v", err)
 	suite.dao.AssertCalled(suite.T(), "Delete", mock.Anything, "test_vendor", "test_repo", "test_digest")
-	suite.regCli.AssertCalled(suite.T(), "DeleteBlob")
+	suite.regCli.AssertCalled(suite.T(), "DeleteBlob", "sys_harb0r/test_vendor/test_repo", "test_digest")
 }
 
 func (suite *ManagerTestSuite) TestDeleteSystemArtifactBlobDeleteError() {
@@ -197,7 +217,7 @@ func (suite *ManagerTestSuite) TestDeleteSystemArtifactBlobDeleteError() {
 
 	suite.Errorf(err, "Expected error when deleting artifact: %v", err)
 	suite.dao.AssertNotCalled(suite.T(), "Delete", mock.Anything, "test_vendor", "test_repo", "test_digest")
-	suite.regCli.AssertCalled(suite.T(), "DeleteBlob")
+	suite.regCli.AssertCalled(suite.T(), "DeleteBlob", "sys_harb0r/test_vendor/test_repo", "test_digest")
 }
 
 func (suite *ManagerTestSuite) TestExist() {

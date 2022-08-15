@@ -124,6 +124,10 @@ var (
 			{Resource: rbac.ResourcePreatPolicy, Action: rbac.ActionUpdate},
 			{Resource: rbac.ResourcePreatPolicy, Action: rbac.ActionDelete},
 			{Resource: rbac.ResourcePreatPolicy, Action: rbac.ActionList},
+
+			{Resource: rbac.ResourceExportCVE, Action: rbac.ActionCreate},
+			{Resource: rbac.ResourceExportCVE, Action: rbac.ActionRead},
+			{Resource: rbac.ResourceExportCVE, Action: rbac.ActionList},
 		},
 
 		"maintainer": {
@@ -208,6 +212,10 @@ var (
 
 			{Resource: rbac.ResourceArtifactLabel, Action: rbac.ActionCreate},
 			{Resource: rbac.ResourceArtifactLabel, Action: rbac.ActionDelete},
+
+			{Resource: rbac.ResourceExportCVE, Action: rbac.ActionCreate},
+			{Resource: rbac.ResourceExportCVE, Action: rbac.ActionRead},
+			{Resource: rbac.ResourceExportCVE, Action: rbac.ActionList},
 		},
 
 		"developer": {
@@ -229,6 +237,13 @@ var (
 			{Resource: rbac.ResourceRepository, Action: rbac.ActionList},
 			{Resource: rbac.ResourceRepository, Action: rbac.ActionPush},
 			{Resource: rbac.ResourceRepository, Action: rbac.ActionPull},
+
+			{Resource: rbac.ResourceTagRetention, Action: rbac.ActionCreate},
+			{Resource: rbac.ResourceTagRetention, Action: rbac.ActionRead},
+			{Resource: rbac.ResourceTagRetention, Action: rbac.ActionUpdate},
+			{Resource: rbac.ResourceTagRetention, Action: rbac.ActionDelete},
+			{Resource: rbac.ResourceTagRetention, Action: rbac.ActionList},
+			{Resource: rbac.ResourceTagRetention, Action: rbac.ActionOperate},
 
 			{Resource: rbac.ResourceHelmChart, Action: rbac.ActionCreate},
 			{Resource: rbac.ResourceHelmChart, Action: rbac.ActionRead},
@@ -263,6 +278,10 @@ var (
 
 			{Resource: rbac.ResourceArtifactLabel, Action: rbac.ActionCreate},
 			{Resource: rbac.ResourceArtifactLabel, Action: rbac.ActionDelete},
+
+			{Resource: rbac.ResourceExportCVE, Action: rbac.ActionCreate},
+			{Resource: rbac.ResourceExportCVE, Action: rbac.ActionRead},
+			{Resource: rbac.ResourceExportCVE, Action: rbac.ActionList},
 		},
 
 		"guest": {

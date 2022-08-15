@@ -20,7 +20,6 @@ import (
 	"github.com/goharbor/harbor/src/jobservice/job/impl/gdpr"
 	"github.com/goharbor/harbor/src/lib/config"
 	"github.com/goharbor/harbor/src/pkg/task"
-
 	"github.com/goharbor/harbor/src/common"
 	commonmodels "github.com/goharbor/harbor/src/common/models"
 	"github.com/goharbor/harbor/src/common/security"
