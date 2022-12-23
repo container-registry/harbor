@@ -1,14 +1,25 @@
 version = 1
 
-test_patterns = [
-  "tests/**",
-  "/src/portal/e2e/**"
-]
+test_patterns = ["tests/**"]
+
+[[analyzers]]
+name = "javascript"
+enabled = true
+
+  [analyzers.meta]
+  plugins = ["angular"]
+
+[[analyzers]]
+name = "docker"
+enabled = true
+
+  [analyzers.meta]
+  dockerfile_paths = ["make/**"]
 
 [[analyzers]]
 name = "go"
 enabled = true
 
   [analyzers.meta]
-  import_root = "github.com/container-registry/harbor/"
+  import_root = "github.com/container-registry/harbor"
   dependencies_vendored = true
