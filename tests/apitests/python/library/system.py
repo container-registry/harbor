@@ -13,13 +13,16 @@ class System(base.Base):
         try:
             data, status_code, _ = client.system_gc_get_with_http_info()
         except ApiException as e:
-            if e.status == expect_status_code:
-                if expect_response_body is not None and e.body.strip() != expect_response_body.strip():
-                    raise Exception(r"Get configuration response body is not as expected {} actual status is {}.".format(expect_response_body.strip(), e.body.strip()))
-                else:
-                    return e.reason, e.body
+            if e.status != expect_status_code:
+                raise Exception(
+                    f"Get configuration result is not as expected {expect_status_code} actual status is {e.status}."
+                )
+            if expect_response_body is not None and e.body.strip() != expect_response_body.strip():
+                raise Exception(
+                    f"Get configuration response body is not as expected {expect_response_body.strip()} actual status is {e.body.strip()}."
+                )
             else:
-                raise Exception(r"Get configuration result is not as expected {} actual status is {}.".format(expect_status_code, e.status))
+                return e.reason, e.body
         base._assert_status_code(expect_status_code, status_code)
         return data
 
@@ -29,13 +32,16 @@ class System(base.Base):
         try:
             data, status_code, _ = client.system_gc_id_get_with_http_info(job_id)
         except ApiException as e:
-            if e.status == expect_status_code:
-                if expect_response_body is not None and e.body.strip() != expect_response_body.strip():
-                    raise Exception(r"Get configuration response body is not as expected {} actual status is {}.".format(expect_response_body.strip(), e.body.strip()))
-                else:
-                    return e.reason, e.body
+            if e.status != expect_status_code:
+                raise Exception(
+                    f"Get configuration result is not as expected {expect_status_code} actual status is {e.status}."
+                )
+            if expect_response_body is not None and e.body.strip() != expect_response_body.strip():
+                raise Exception(
+                    f"Get configuration response body is not as expected {expect_response_body.strip()} actual status is {e.body.strip()}."
+                )
             else:
-                raise Exception(r"Get configuration result is not as expected {} actual status is {}.".format(expect_status_code, e.status))
+                return e.reason, e.body
         base._assert_status_code(expect_status_code, status_code)
         return data
 
@@ -45,13 +51,16 @@ class System(base.Base):
         try:
             data, status_code, _ = client.system_gc_id_log_get_with_http_info(job_id)
         except ApiException as e:
-            if e.status == expect_status_code:
-                if expect_response_body is not None and e.body.strip() != expect_response_body.strip():
-                    raise Exception(r"Get configuration response body is not as expected {} actual status is {}.".format(expect_response_body.strip(), e.body.strip()))
-                else:
-                    return e.reason, e.body
+            if e.status != expect_status_code:
+                raise Exception(
+                    f"Get configuration result is not as expected {expect_status_code} actual status is {e.status}."
+                )
+            if expect_response_body is not None and e.body.strip() != expect_response_body.strip():
+                raise Exception(
+                    f"Get configuration response body is not as expected {expect_response_body.strip()} actual status is {e.body.strip()}."
+                )
             else:
-                raise Exception(r"Get configuration result is not as expected {} actual status is {}.".format(expect_status_code, e.status))
+                return e.reason, e.body
         base._assert_status_code(expect_status_code, status_code)
         return data
 
@@ -61,13 +70,16 @@ class System(base.Base):
         try:
             data, status_code, _ = client.system_gc_schedule_get_with_http_info()
         except ApiException as e:
-            if e.status == expect_status_code:
-                if expect_response_body is not None and e.body.strip() != expect_response_body.strip():
-                    raise Exception(r"Get configuration response body is not as expected {} actual status is {}.".format(expect_response_body.strip(), e.body.strip()))
-                else:
-                    return e.reason, e.body
+            if e.status != expect_status_code:
+                raise Exception(
+                    f"Get configuration result is not as expected {expect_status_code} actual status is {e.status}."
+                )
+            if expect_response_body is not None and e.body.strip() != expect_response_body.strip():
+                raise Exception(
+                    f"Get configuration response body is not as expected {expect_response_body.strip()} actual status is {e.body.strip()}."
+                )
             else:
-                raise Exception(r"Get configuration result is not as expected {} actual status is {}.".format(expect_status_code, e.status))
+                return e.reason, e.body
         base._assert_status_code(expect_status_code, status_code)
         return data
 
@@ -87,10 +99,7 @@ class System(base.Base):
         return client.system_cve_allowlist_get()
 
     def get_project_quota(self, reference, reference_id, **kwargs):
-        params={}
-        params['reference'] = reference
-        params['reference_id'] = reference_id
-
+        params = {'reference': reference, 'reference_id': reference_id}
         client = self._get_client(api_type='quota', **kwargs)
         data, status_code, _ = client.list_quotas_with_http_info(**params)
         base._assert_status_code(200, status_code)

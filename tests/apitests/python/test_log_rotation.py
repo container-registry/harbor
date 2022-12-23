@@ -53,7 +53,7 @@ class TestLogRotation(unittest.TestCase, object):
         job_id = None
         for i in range(10):
             print("wait for the job to finish:", i)
-            if job_id == None:
+            if job_id is None:
                 latest_job = self.purge.get_latest_purge_job()
                 job_status = latest_job.job_status
                 job_id = latest_job.id

@@ -29,7 +29,7 @@ class TestProjects(unittest.TestCase):
         self.user_push_chart_password = "Aa123456"
         self.chart_file_name = "harbor-helm-1.7.3"
         self.chart_file_package_name = "harbor-1.7.3.tgz"
-        self.chart_file_path = files_directory + "harbor-helm-1.7.3.tar.gz"
+        self.chart_file_path = f"{files_directory}harbor-helm-1.7.3.tar.gz"
         self.version = "1.7.3"
         self.repo_name = "harbor"
 

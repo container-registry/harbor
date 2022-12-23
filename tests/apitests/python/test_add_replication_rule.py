@@ -64,7 +64,9 @@ class TestProjects(unittest.TestCase):
             expected_project_id = TestProjects.project_add_rule_id, **TestProjects.USER_add_rule_CLIENT)
 
         #3. Create a new registry
-        TestProjects.registry_id, _ = self.registry.create_registry("https://" + harbor_server,**ADMIN_CLIENT)
+        TestProjects.registry_id, _ = self.registry.create_registry(
+            f"https://{harbor_server}", **ADMIN_CLIENT
+        )
 
         #4. Create a new rule for this registry;
         TestProjects.rule_id, rule_name = self.replication.create_replication_policy(dest_registry=v2_swagger_client.Registry(id=int(TestProjects.registry_id)), **ADMIN_CLIENT)

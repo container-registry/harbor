@@ -17,7 +17,7 @@ class User(base.Base, object):
         if realname is None:
             realname = base._random_name("realname")
         if email is None:
-            email = '%s@%s.com' % (realname, "harbortest")
+            email = f'{realname}@harbortest.com'
         if user_password is None:
             user_password = "Harbor12345678"
         user_req = v2_swagger_client.UserCreationReq(username=name, email=email, password=user_password, realname=realname)
@@ -32,12 +32,12 @@ class User(base.Base, object):
     def get_users(self, user_name=None, email=None, page=None, page_size=None, expect_status_code=200, **kwargs):
         query = []
         if user_name is not None:
-            query.append("username=" + user_name)
+            query.append(f"username={user_name}")
         if email is not None:
-            query.append("email=" + email)
+            query.append(f"email={email}")
 
         params = {}
-        if len(query) > 0:
+        if query:
             params["q"] = ",".join(query)
         if page is not None:
             params["page"] = page
@@ -58,10 +58,7 @@ class User(base.Base, object):
 
     def get_user_by_name(self, name, expect_status_code=200, **kwargs):
         users = self.get_users(user_name=name, expect_status_code=expect_status_code, **kwargs)
-        for user in users:
-            if user.username == name:
-                return user
-        return None
+        return next((user for user in users if user.username == name), None)
 
     def get_user_current(self, **kwargs):
         data, status_code, _ = self._get_client(**kwargs).get_current_user_info_with_http_info()

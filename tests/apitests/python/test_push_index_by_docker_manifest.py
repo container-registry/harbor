@@ -89,8 +89,11 @@ class TestManifest(unittest.TestCase):
         repo_name_b, tag_b = push_self_build_image_to_project(TestManifest.project_name, harbor_server, 'admin', 'Harbor12345', TestManifest.image_b, "latest")
 
         #4. Push an index(IA) to Harbor by docker manifest CLI successfully;
-        manifests = [harbor_server+"/"+repo_name_a+":"+tag_a, harbor_server+"/"+repo_name_b+":"+tag_b]
-        index = harbor_server+"/"+TestManifest.project_name+"/"+TestManifest.index_name+":"+TestManifest.index_tag
+        manifests = [
+            f"{harbor_server}/{repo_name_a}:{tag_a}",
+            f"{harbor_server}/{repo_name_b}:{tag_b}",
+        ]
+        index = f"{harbor_server}/{TestManifest.project_name}/{TestManifest.index_name}:{TestManifest.index_tag}"
         TestManifest.index_sha256_cli_ret, TestManifest.manifests_sha256_cli_ret = library.docker_api.docker_manifest_push_to_harbor(index, manifests, harbor_server, TestManifest.user_name, TestManifest.user_push_index_password)
 
         #5. Get Artifacts successfully;
@@ -110,10 +113,16 @@ class TestManifest(unittest.TestCase):
         self.assertEqual(manifests_sha256_harbor_ret.count(TestManifest.manifests_sha256_cli_ret[1]), 1)
 
         #8.1 Verify harbor index(IA) can be pulled by docker CLI successfully;
-        pull_harbor_image(harbor_server, TestManifest.user_name, TestManifest.user_push_index_password, TestManifest.project_name+"/"+TestManifest.index_name, TestManifest.index_tag)
+        pull_harbor_image(
+            harbor_server,
+            TestManifest.user_name,
+            TestManifest.user_push_index_password,
+            f"{TestManifest.project_name}/{TestManifest.index_name}",
+            TestManifest.index_tag,
+        )
 
         #8.2 Verify harbor index(IA) can be pulled by ctr successfully;
-        oci_ref = harbor_server+"/"+TestManifest.project_name+"/"+TestManifest.index_name+":"+TestManifest.index_tag
+        oci_ref = f"{harbor_server}/{TestManifest.project_name}/{TestManifest.index_name}:{TestManifest.index_tag}"
         library.containerd.ctr_images_pull(TestManifest.user_name, TestManifest.user_push_index_password, oci_ref)
         library.containerd.ctr_images_list(oci_ref = oci_ref)
 
@@ -169,5 +178,5 @@ if __name__ == '__main__':
     suite = unittest.TestSuite(unittest.makeSuite(TestManifest))
     result = unittest.TextTestRunner(sys.stdout, verbosity=2, failfast=True).run(suite)
     if not result.wasSuccessful():
-        raise Exception(r"Manifest test failed: {}".format(result))
+        raise Exception(f"Manifest test failed: {result}")
 

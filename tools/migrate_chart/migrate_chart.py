@@ -42,7 +42,7 @@ class ChartV2:
                 flag = True
                 break
         if not flag:
-            raise Exception('chart name: {} is illegal'.format('-'.join(parts)))
+            raise Exception(f"chart name: {'-'.join(parts)} is illegal")
 
     def __check_exist(self, hostname, username, password):
         return requests.get(CHART_URL_PATTERN.format(
@@ -82,8 +82,7 @@ def migrate(hostname, username, password):
     subprocess.run([CA_UPDATE_CMD])
     subprocess.run([HELM_CMD, 'registry', 'login', hostname, '--username', username, '--password', password])
     charts = [ChartV2(c) for p in CHART_SOURCE_DIR.iterdir() if p.is_dir() for c in p.iterdir() if c.is_file() and c.name != "index-cache.yaml"]
-    with click.progressbar(charts, label="Migrating chart ...", length=len(charts),
-    item_show_func=lambda x: "{}/{}:{} total errors: {}".format(x.project, x.name, x.version, len(errs)) if x else '') as bar:
+    with click.progressbar(charts, label="Migrating chart ...", length=len(charts), item_show_func=lambda x: f"{x.project}/{x.name}:{x.version} total errors: {len(errs)}" if x else '') as bar:
         for chart in bar:
             try:
                 result = chart.migrate(hostname, username, password)

@@ -61,7 +61,13 @@ class TestProjects(unittest.TestCase):
         robot_id, robot_account = self.robot.create_project_robot(TestProjects.project_name,
                                                                          30 ,**TestProjects.USER_CLIENT)
         #4. Push chart to project(PA) by Helm2 CLI with robot account(RA);"
-        library.helm.helm2_add_repo(self.chart_repo_name, "https://"+harbor_server, TestProjects.project_name, robot_account.name, robot_account.secret)
+        library.helm.helm2_add_repo(
+            self.chart_repo_name,
+            f"https://{harbor_server}",
+            TestProjects.project_name,
+            robot_account.name,
+            robot_account.secret,
+        )
         library.helm.helm2_push(self.chart_repo_name, self.chart_file, TestProjects.project_name, robot_account.name, robot_account.secret)
 
         #5. Get chart repositry from project(PA) successfully;

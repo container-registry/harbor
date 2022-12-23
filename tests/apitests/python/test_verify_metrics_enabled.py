@@ -34,7 +34,7 @@ class TestMetricsExist(unittest.TestCase):
     }
 
     def get_metrics(self):
-        metrics_url = testutils.METRIC_URL+'/metrics'
+        metrics_url = f'{testutils.METRIC_URL}/metrics'
         exporter_res = requests.get(metrics_url)
         core_res = requests.get(metrics_url, params={'comp': 'core'})
         reg_res = requests.get(metrics_url, params={'comp': 'registry'})
@@ -47,7 +47,7 @@ class TestMetricsExist(unittest.TestCase):
 
 
             for metric_name in self.metrics[k]:
-                print("Metric {} should exist in {} ".format(metric_name, k))
+                print(f"Metric {metric_name} should exist in {k} ")
                 self.assertTrue(metric_name in metric_text)
 
 if __name__ == '__main__':

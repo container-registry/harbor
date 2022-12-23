@@ -70,9 +70,16 @@ class TestProjects(unittest.TestCase):
         profix = "aaa/bbb"
 
         #5. Create a new repository(RA) and tag(TA) in project(PA) by user(UA);
-        TestProjects.repo_name, tag = push_self_build_image_to_project(TestProjects.project_sign_image_name, harbor_server, user_sign_image_name, user_001_password, profix+"/"+image, src_tag)
+        TestProjects.repo_name, tag = push_self_build_image_to_project(
+            TestProjects.project_sign_image_name,
+            harbor_server,
+            user_sign_image_name,
+            user_001_password,
+            f"{profix}/{image}",
+            src_tag,
+        )
         #7. Get signature of image with tag(TA), it should be exist.
-        full_name = urllib.parse.quote(profix+"/"+image,'utf-8')
+        full_name = urllib.parse.quote(f"{profix}/{image}", 'utf-8')
 
         artifact = self.artifact.get_reference_info(TestProjects.project_sign_image_name, full_name, tag, **TestProjects.USER_sign_image_CLIENT)
         self.assertEqual(artifact.type, 'IMAGE')

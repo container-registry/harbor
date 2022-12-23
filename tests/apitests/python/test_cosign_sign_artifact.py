@@ -82,7 +82,9 @@ class TestCosign(unittest.TestCase):
         cosign.generate_key_pair()
         # 5.2. Generate cosign key pair;
         docker_api.docker_login_cmd(harbor_server, user_name, user_password, enable_manifest = False)
-        cosign.sign_artifact("{}/{}/{}:{}".format(harbor_server, TestCosign.project_name, self.image, self.tag))
+        cosign.sign_artifact(
+            f"{harbor_server}/{TestCosign.project_name}/{self.image}:{self.tag}"
+        )
 
         # 6.1. Verify list_artifacts API;
         artifact_list = self.artifact.list_artifacts(TestCosign.project_name, self.image, **TestCosign.user_client)

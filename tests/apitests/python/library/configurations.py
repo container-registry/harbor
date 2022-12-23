@@ -60,9 +60,12 @@ class Configurations(base.Base, object):
 
         if item_name is not None:
             return {
-            'project_creation_restriction': data.project_creation_restriction.value,
-            'token_expiration': data.token_expiration.value,
-            }.get(item_name,'Get Configutation Error: Item name {} is not exist'.format(item_name))
+                'project_creation_restriction': data.project_creation_restriction.value,
+                'token_expiration': data.token_expiration.value,
+            }.get(
+                item_name,
+                f'Get Configutation Error: Item name {item_name} is not exist',
+            )
 
         return data
 

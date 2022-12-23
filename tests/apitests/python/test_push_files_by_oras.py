@@ -59,7 +59,9 @@ class TestProjects(unittest.TestCase):
 
         #4. Get repository from Harbor successfully, and verfiy repository name is repo pushed by ORAS CLI;
         repo_data = self.repo.get_repository(TestProjects.project_name, self.repo_name, **TestProjects.USER_CLIENT)
-        self.assertEqual(repo_data.name, TestProjects.project_name + "/" + self.repo_name)
+        self.assertEqual(
+            repo_data.name, f"{TestProjects.project_name}/{self.repo_name}"
+        )
 
         #5. Get and verify artifacts by tag;
         artifact = self.artifact.get_reference_info(TestProjects.project_name, self.repo_name, self.tag, **TestProjects.USER_CLIENT)
@@ -70,7 +72,9 @@ class TestProjects(unittest.TestCase):
 
         #7. Verfiy MD5 between artifacts pushed by ORAS and artifacts pulled by ORAS;
         if set(md5_list_push) != set(md5_list_pull):
-            raise Exception(r"MD5 check failed with {} and {}.".format(str(md5_list_push), str(md5_list_pull)))
+            raise Exception(
+                f"MD5 check failed with {str(md5_list_push)} and {str(md5_list_pull)}."
+            )
 
 if __name__ == '__main__':
     unittest.main()

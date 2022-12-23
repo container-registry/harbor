@@ -10,20 +10,29 @@ import base
 
 def is_member_exist_in_project(members, member_user_name, expected_member_role_id = None):
     result = False
-    for member in members:
-        if member.entity_name == member_user_name:
-            if expected_member_role_id != None:
-                if member.role_id == expected_member_role_id:
-                    return True
-            else:
-                return True
-    return result
+    return next(
+        (
+            True
+            for member in members
+            if member.entity_name == member_user_name
+            and (
+                expected_member_role_id != None
+                and member.role_id == expected_member_role_id
+                or expected_member_role_id is None
+            )
+        ),
+        result,
+    )
 
 def get_member_id_by_name(members, member_user_name):
-    for member in members:
-        if member.entity_name == member_user_name:
-            return member.id
-    return None
+    return next(
+        (
+            member.id
+            for member in members
+            if member.entity_name == member_user_name
+        ),
+        None,
+    )
 
 class Project(base.Base):
     def __init__(self, username=None, password=None):
@@ -58,7 +67,7 @@ class Project(base.Base):
         return data
 
     def get_project_id(self, project_name, **kwargs):
-        project_data = self.get_projects(dict(), **kwargs)
+        project_data = self.get_projects({}, **kwargs)
         actual_count = len(project_data)
         if actual_count == 1 and str(project_data[0].project_name) != str(project_name):
             return project_data[0].project_id
@@ -69,9 +78,11 @@ class Project(base.Base):
         project_data = self.get_projects(params, **kwargs)
         actual_count = len(project_data)
         if expected_count is not None and actual_count!= expected_count:
-            raise Exception(r"Private project count should be {}.".format(expected_count))
+            raise Exception(f"Private project count should be {expected_count}.")
         if expected_project_id is not None and actual_count == 1 and str(project_data[0].project_id) != str(expected_project_id):
-            raise Exception(r"Project-id check failed, expect {} but got {}, please check this test case.".format(str(expected_project_id), str(project_data[0].project_id)))
+            raise Exception(
+                f"Project-id check failed, expect {str(expected_project_id)} but got {str(project_data[0].project_id)}, please check this test case."
+            )
 
     def check_project_name_exist(self, name=None, **kwargs):
         try:
@@ -94,7 +105,7 @@ class Project(base.Base):
 
         base._assert_status_code(expect_status_code, status_code)
         base._assert_status_code(200, status_code)
-        print("Project {} info: {}".format(project_id, data))
+        print(f"Project {project_id} info: {data}")
         return data
 
     def update_project(self, project_id, expect_status_code=200, metadata=None, cve_allowlist=None, **kwargs):
@@ -150,8 +161,10 @@ class Project(base.Base):
         kwargs['api_type'] = 'member'
         members = self.get_project_members(project_id, **kwargs)
         result = get_member_id_by_name(list(members), member_user_name)
-        if result == None:
-            raise Exception(r"Failed to get member id of member {} in project {}.".format(member_user_name, project_id))
+        if result is None:
+            raise Exception(
+                f"Failed to get member id of member {member_user_name} in project {project_id}."
+            )
         else:
             return result
 
@@ -160,14 +173,18 @@ class Project(base.Base):
         members = self.get_project_members(project_id, **kwargs)
         result = is_member_exist_in_project(list(members), member_user_name)
         if result == True:
-            raise Exception(r"User {} should not be a member of project with ID {}.".format(member_user_name, project_id))
+            raise Exception(
+                f"User {member_user_name} should not be a member of project with ID {project_id}."
+            )
 
     def check_project_members_exist(self, project_id, member_user_name, expected_member_role_id = None, **kwargs):
         kwargs['api_type'] = 'member'
         members = self.get_project_members(project_id, **kwargs)
         result = is_member_exist_in_project(members, member_user_name, expected_member_role_id = expected_member_role_id)
         if result == False:
-            raise Exception(r"User {} should be a member of project with ID {}.".format(member_user_name, project_id))
+            raise Exception(
+                f"User {member_user_name} should be a member of project with ID {project_id}."
+            )
 
     def update_project_member_role(self, project_id, member_id, member_role_id, expect_status_code = 200, **kwargs):
         kwargs['api_type'] = 'member'
@@ -188,10 +205,7 @@ class Project(base.Base):
         projectMember = v2_swagger_client.ProjectMember()
         if user_id is not None:
            projectMember.member_user = {"user_id": int(user_id)}
-        if member_role_id is None:
-            projectMember.role_id = 1
-        else:
-            projectMember.role_id = member_role_id
+        projectMember.role_id = 1 if member_role_id is None else member_role_id
         if _ldap_group_dn is not None:
             projectMember.member_group = v2_swagger_client.UserGroup(ldap_group_dn=_ldap_group_dn)
 
@@ -208,7 +222,7 @@ class Project(base.Base):
         try:
             logs = self.get_project_log(project_name, expect_status_code=status_code, **kwargs)
             count = 0
-            for log in list(logs):
+            for _ in list(logs):
                 count = count + 1
             return count
         except ApiException as e:

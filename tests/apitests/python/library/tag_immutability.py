@@ -49,10 +49,7 @@ class Tag_Immutability(base.Base, object):
         rules = self.list_tag_immutability_policy_rules(project_id, **kwargs)
         if len(rules) <= 0:
             return None
-        for r in rules[0]:
-            if r.id == rule_id:
-                return r
-        return None
+        return next((r for r in rules[0] if r.id == rule_id), None)
 
     def update_tag_immutability_policy_rule(self, project_id, rule_id, selector_repository_decoration = None,
                                             selector_repository=None, selector_tag_decoration = None,

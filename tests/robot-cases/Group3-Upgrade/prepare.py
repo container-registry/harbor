@@ -20,13 +20,13 @@ args = parser.parse_args()
 
 from os import path
 sys.path.append(args.libpath)
-sys.path.append(args.libpath + "/library")
+sys.path.append(f"{args.libpath}/library")
 from library.docker_api import docker_manifest_push_to_harbor
 from library.repository import Repository
 from library.repository import push_self_build_image_to_project
 
-url = "https://"+args.endpoint+"/api/"
-endpoint_url = "https://"+args.endpoint
+url = f"https://{args.endpoint}/api/"
+endpoint_url = f"https://{args.endpoint}"
 print(url)
 
 with open("feature_map.json") as f:
@@ -38,10 +38,7 @@ def get_branch(func_name, version):
         has_feature = True
         if node["version"] == version:
             return node["branch"]
-    if has_feature is False:
-        return "No Restriction"
-    else:
-        return "Not Supported"
+    return "No Restriction" if has_feature is False else "Not Supported"
 
 def get_feature_branch(func):
     @wraps(func)
@@ -68,7 +65,9 @@ class HarborAPI:
             elif kwargs["branch"] == 3:
                 print("Populate all projects...")
             else:
-                raise Exception(r"Error: Feature {} has no branch {}.".format(sys._getframe().f_code.co_name, branch))
+                raise Exception(
+                    f"Error: Feature {sys._getframe().f_code.co_name} has no branch {branch}."
+                )
             self.create_project(project, version=args.version)
             if create_project_only:
                 continue
@@ -101,41 +100,60 @@ class HarborAPI:
     @get_feature_branch
     def create_project(self, project, **kwargs):
         if kwargs["branch"] == 1:
-                body=dict(body={"project_name": project["name"], "metadata": {"public": "true"}})
-                request(url+"projects", 'post', **body)
+            body=dict(body={"project_name": project["name"], "metadata": {"public": "true"}})
+            request(f"{url}projects", 'post', **body)
         elif kwargs["branch"] == 2:
-                body=dict(body={"project_name": project["name"], "metadata": {"public": "true"},"count_limit":project["count_limit"],"storage_limit":project["storage_limit"]})
-                request(url+"projects", 'post', **body)
+            body=dict(body={"project_name": project["name"], "metadata": {"public": "true"},"count_limit":project["count_limit"],"storage_limit":project["storage_limit"]})
+            request(f"{url}projects", 'post', **body)
         elif kwargs["branch"] == 3:
             if project.get("registry_name") is not None:
-                r = request(url+"registries?name="+project["registry_name"]+"", 'get')
+                r = request(f"{url}registries?name=" + project["registry_name"] + "", 'get')
                 registry_id = int(str(r.json()[0]['id']))
             else:
                 registry_id = None
             body=dict(body={"project_name": project["name"], "registry_id":registry_id, "metadata": {"public": "true"},"storage_limit":project["storage_limit"]})
-            request(url+"projects", 'post', **body)
+            request(f"{url}projects", 'post', **body)
 
             #Project with registry_name is a proxy project, there should be images can be pulled.
             if project.get("registry_name") is not None:
-                USER_ADMIN=dict(endpoint = "https://"+args.endpoint+"/api/v2.0" , username = "admin", password = "Harbor12345")
+                USER_ADMIN = dict(
+                    endpoint=f"https://{args.endpoint}/api/v2.0",
+                    username="admin",
+                    password="Harbor12345",
+                )
                 repo = Repository()
                 for _repo in project["repo"]:
-                    pull_image(args.endpoint+"/"+ project["name"]+"/"+_repo["cache_image_namespace"]+"/"+_repo["cache_image"])
+                    pull_image(
+                        f"{args.endpoint}/"
+                        + project["name"]
+                        + "/"
+                        + _repo["cache_image_namespace"]
+                        + "/"
+                        + _repo["cache_image"]
+                    )
                     time.sleep(180)
                     repo_name = urllib.parse.quote(_repo["cache_image_namespace"]+"/"+_repo["cache_image"],'utf-8')
                     repo_data = repo.get_repository(project["name"], repo_name, **USER_ADMIN)
             return
         else:
-            raise Exception(r"Error: Feature {} has no branch {}.".format(sys._getframe().f_code.co_name, branch))
+            raise Exception(
+                f"Error: Feature {sys._getframe().f_code.co_name} has no branch {branch}."
+            )
 
     def create_user(self, username):
-        payload = {"username":username, "email":username+"@harbortest.com", "password":"Harbor12345", "realname":username, "comment":"string"}
+        payload = {
+            "username": username,
+            "email": f"{username}@harbortest.com",
+            "password": "Harbor12345",
+            "realname": username,
+            "comment": "string",
+        }
         body=dict(body=payload)
-        request(url+"users", 'post', **body)
+        request(f"{url}users", 'post', **body)
 
     @get_feature_branch
     def set_user_admin(self, user, **kwargs):
-        r = request(url+"users?username="+user+"", 'get')
+        r = request(f"{url}users?username={user}", 'get')
         userid = str(r.json()[0]['user_id'])
 
         if kwargs["branch"] == 1:
@@ -145,91 +163,111 @@ class HarborAPI:
         elif kwargs["branch"] == 3:
             body=dict(body={"sysadmin_flag": True, "user_id":int(userid)})
         else:
-            raise Exception(r"Error: Feature {} has no branch {}.".format(sys._getframe().f_code.co_name, branch))
-        request(url+"users/"+userid+"/sysadmin", 'put', **body)
+            raise Exception(
+                f"Error: Feature {sys._getframe().f_code.co_name} has no branch {branch}."
+            )
+        request(f"{url}users/{userid}/sysadmin", 'put', **body)
 
     @get_feature_branch
     def add_member(self, project, user, role, **kwargs):
-        r = request(url+"projects?name="+project+"", 'get')
+        r = request(f"{url}projects?name={project}", 'get')
         projectid = str(r.json()[0]['project_id'])
 
         if kwargs["branch"] == 1:
-            payload = {"roles": [role], "username":""+user+""}
+            payload = {"roles": [role], "username": f"{user}"}
         elif kwargs["branch"] == 2:
-            payload = {"member_user":{ "username": ""+user+""},"role_id": role}
+            payload = {"member_user": {"username": f"{user}"}, "role_id": role}
         else:
-            raise Exception(r"Error: Feature {} has no branch {}.".format(sys._getframe().f_code.co_name, branch))
+            raise Exception(
+                f"Error: Feature {sys._getframe().f_code.co_name} has no branch {branch}."
+            )
         body=dict(body=payload)
-        request(url+"projects/"+projectid+"/members", 'post', **body)
+        request(f"{url}projects/{projectid}/members", 'post', **body)
 
     @get_feature_branch
     def add_p2p_preheat_policy(self, project, **kwargs):
-        r = request(url+"projects?name="+project["name"]+"", 'get')
+        r = request(f"{url}projects?name=" + project["name"] + "", 'get')
         projectid = int(str(r.json()[0]['project_id']))
-        if kwargs["branch"] == 1:
-            if project["p2p_preheat_policy"] is not None:
-                instances = request(url+"p2p/preheat/instances", 'get')
-                if len(instances.json()) == 0:
-                    raise Exception(r"Please add p2p preheat instances first.")
-                for instance in instances.json():
-                    print("instance:", instance)
-                    for policy in project["p2p_preheat_policy"]:
-                        instance_str = [str(item) for item in instances]
-                        if policy["provider_name"] in ''.join(instance_str):
-                            print("policy:", policy)
-                            if instance['name'] == policy["provider_name"]:
-                                payload = {
-                                    "provider_id":int(instance['id']),
-                                    "name":policy["name"],
-                                    "filters":policy["filters"],
-                                    "trigger":policy["trigger"],
-                                    "project_id":projectid,
-                                    "enabled":policy["enabled"]
-                                }
-                                body=dict(body=payload)
-                                print(body)
-                                request(url+"projects/"+project["name"]+"/preheat/policies", 'post', **body)
-                        else:
-                            raise Exception(r"Please verify if distribution {} has beed created.".format(policy["provider_name"]))
-        else:
-            raise Exception(r"Error: Feature {} has no branch {}.".format(sys._getframe().f_code.co_name, branch))
+        if kwargs["branch"] != 1:
+            raise Exception(
+                f"Error: Feature {sys._getframe().f_code.co_name} has no branch {branch}."
+            )
+        if project["p2p_preheat_policy"] is not None:
+            instances = request(f"{url}p2p/preheat/instances", 'get')
+            if len(instances.json()) == 0:
+                raise Exception(r"Please add p2p preheat instances first.")
+            for instance in instances.json():
+                print("instance:", instance)
+                for policy in project["p2p_preheat_policy"]:
+                    instance_str = [str(item) for item in instances]
+                    if policy["provider_name"] not in ''.join(instance_str):
+                        raise Exception(
+                            f'Please verify if distribution {policy["provider_name"]} has beed created.'
+                        )
+                    print("policy:", policy)
+                    if instance['name'] == policy["provider_name"]:
+                        payload = {
+                            "provider_id":int(instance['id']),
+                            "name":policy["name"],
+                            "filters":policy["filters"],
+                            "trigger":policy["trigger"],
+                            "project_id":projectid,
+                            "enabled":policy["enabled"]
+                        }
+                        body=dict(body=payload)
+                        print(body)
+                        request(
+                            f"{url}projects/"
+                            + project["name"]
+                            + "/preheat/policies",
+                            'post',
+                            **body,
+                        )
 
     @get_feature_branch
     def add_endpoint(self, endpointurl, endpointname, username, password, insecure, registry_type, **kwargs):
         if kwargs["branch"] == 1:
-            payload = {"endpoint": ""+endpointurl+"", "name": ""+endpointname+"", "username": ""+username+"", "password": ""+password+"", "insecure": insecure}
+            payload = {
+                "endpoint": f"{endpointurl}",
+                "name": f"{endpointname}",
+                "username": f"{username}",
+                "password": f"{password}",
+                "insecure": insecure,
+            }
             body=dict(body=payload)
-            request(url+"targets", 'post', **body)
+            request(f"{url}targets", 'post', **body)
         elif kwargs["branch"] == 2:
             payload = {
-                "credential":{
-                    "access_key":""+username+"",
-                    "access_secret":""+password+"",
-                    "type":"basic"
+                "credential": {
+                    "access_key": f"{username}",
+                    "access_secret": f"{password}",
+                    "type": "basic",
                 },
-                "insecure":insecure,
-                "name":""+endpointname+"",
-                "type":""+registry_type+"",
-                "url":""+endpointurl+""
+                "insecure": insecure,
+                "name": f"{endpointname}",
+                "type": f"{registry_type}",
+                "url": f"{endpointurl}",
             }
             body=dict(body=payload)
             print(body)
-            request(url+"registries", 'post', **body)
+            request(f"{url}registries", 'post', **body)
         else:
-            raise Exception(r"Error: Feature {} has no branch {}.".format(sys._getframe().f_code.co_name, branch))
+            raise Exception(
+                f"Error: Feature {sys._getframe().f_code.co_name} has no branch {branch}."
+            )
 
     @get_feature_branch
     def add_replication_rule(self, replicationrule, **kwargs):
         if kwargs["branch"] == 1:
-            r = request(url+"projects?name="+replicationrule["project"]+"", 'get')
+            r = request(f"{url}projects?name=" + replicationrule["project"] + "", 'get')
             projectid = r.json()[0]['project_id']
-            r = request(url+"targets?name="+replicationrule["endpoint"]+"", 'get')
+            r = request(f"{url}targets?name=" + replicationrule["endpoint"] + "", 'get')
             targetid = r.json()[0]['id']
             payload = {"name": ""+replicationrule["rulename"]+"", "description": "string", "projects": [{"project_id": projectid,}], "targets": [{"id": targetid,}], "trigger": {"kind": ""+replicationrule["trigger"]+"", "schedule_param": {"type": "weekly", "weekday": 1, "offtime": 0}}}
             body=dict(body=payload)
-            request(url+"policies/replication", 'post', **body)
+            request(f"{url}policies/replication", 'post', **body)
         elif kwargs["branch"] == 2:
-            r = request(url+"registries?name="+replicationrule["endpoint"]+"", 'get')
+            r = request(f"{url}registries?name=" + replicationrule["endpoint"] + "", 'get')
             print("response:", r)
             targetid = r.json()[0]['id']
             if replicationrule["is_src_registry"] is True:
@@ -239,13 +277,15 @@ class HarborAPI:
 
             body=dict(body=json.loads(r'{"name":"'+replicationrule["rulename"]+r'","dest_namespace":"'+replicationrule["dest_namespace"]+r'","deletion": '+str(replicationrule["deletion"]).lower()+r',"enabled": '+str(replicationrule["enabled"]).lower()+r',"override": '+str(replicationrule["override"]).lower()+r',"description": "string",'+ registry + r'"trigger":{"type": "'+replicationrule["trigger_type"]+r'", "trigger_settings":{"cron":"'+replicationrule["cron"]+r'"}},"filters":[ {"type":"name","value":"'+replicationrule["name_filters"]+r'"},{"type":"tag","value":"'+replicationrule["tag_filters"]+r'"}]}'))
             print(body)
-            request(url+"replication/policies", 'post', **body)
+            request(f"{url}replication/policies", 'post', **body)
         else:
-            raise Exception(r"Error: Feature {} has no branch {}.".format(sys._getframe().f_code.co_name, branch))
+            raise Exception(
+                f"Error: Feature {sys._getframe().f_code.co_name} has no branch {branch}."
+            )
 
     #@get_feature_branch
     def update_project_setting_metadata(self, project, public, contenttrust, preventrunning, preventseverity, scanonpush):
-        r = request(url+"projects?name="+project+"", 'get')
+        r = request(f"{url}projects?name={project}", 'get')
         projectid = str(r.json()[0]['project_id'])
         payload = {
             "metadata": {
@@ -258,7 +298,7 @@ class HarborAPI:
         }
         body=dict(body=payload)
         print(body)
-        request(url+"projects/"+projectid+"", 'put', **body)
+        request(f"{url}projects/{projectid}", 'put', **body)
 
     @get_feature_branch
     def add_sys_allowlist(self, cve_id_list, **kwargs):
@@ -267,29 +307,31 @@ class HarborAPI:
             for index, cve_id in enumerate(cve_id_list["cve"]):
                 cve_id_str = cve_id_str + '{"cve_id":"' +cve_id["id"] + '"}'
                 if index != len(cve_id_list["cve"]) - 1:
-                    cve_id_str = cve_id_str + ","
+                    cve_id_str = f"{cve_id_str},"
             body=dict(body=json.loads(r'{"items":['+cve_id_str+r'],"expires_at":'+cve_id_list["expires_at"]+'}'))
-            request(url+"system/CVEWhitelist", 'put', **body)
+            request(f"{url}system/CVEWhitelist", 'put', **body)
         elif kwargs["branch"] == 2:
             for index, cve_id in enumerate(cve_id_list["cve"]):
                 cve_id_str = cve_id_str + '{"cve_id":"' +cve_id["id"] + '"}'
                 if index != len(cve_id_list["cve"]) - 1:
-                    cve_id_str = cve_id_str + ","
+                    cve_id_str = f"{cve_id_str},"
             body=dict(body=json.loads(r'{"items":['+cve_id_str+r'],"expires_at":'+cve_id_list["expires_at"]+'}'))
-            request(url+"system/CVEAllowlist", 'put', **body)
+            request(f"{url}system/CVEAllowlist", 'put', **body)
         else:
-            raise Exception(r"Error: Feature {} has no branch {}.".format(sys._getframe().f_code.co_name, branch))
+            raise Exception(
+                f"Error: Feature {sys._getframe().f_code.co_name} has no branch {branch}."
+            )
 
     @get_feature_branch
     def update_project_setting_allowlist(self, project, reuse_sys_cve_whitelist, cve_id_list, **kwargs):
-        r = request(url+"projects?name="+project+"", 'get')
+        r = request(f"{url}projects?name={project}", 'get')
         projectid = str(r.json()[0]['project_id'])
         cve_id_str = ""
         if kwargs["branch"] == 1:
             for index, cve_id in enumerate(cve_id_list["cve"]):
                 cve_id_str = cve_id_str + '{"cve_id":"' +cve_id["id"] + '"}'
                 if index != len(cve_id_list["cve"]) - 1:
-                    cve_id_str = cve_id_str + ","
+                    cve_id_str = f"{cve_id_str},"
             print(cve_id_str)
             if reuse_sys_cve_whitelist == "true":
                 payload = r'{"metadata":{"reuse_sys_cve_whitelist":"true"}}'
@@ -297,12 +339,12 @@ class HarborAPI:
                 payload = r'{"metadata":{"reuse_sys_cve_whitelist":"false"},"cve_whitelist":{"project_id":'+projectid+',"items":['+cve_id_str+r'],"expires_at":'+cve_id_list["expires_at"]+'}}'
             print(payload)
             body=dict(body=json.loads(payload))
-            request(url+"projects/"+projectid+"", 'put', **body)
+            request(f"{url}projects/{projectid}", 'put', **body)
         elif kwargs["branch"] == 2:
             for index, cve_id in enumerate(cve_id_list["cve"]):
                 cve_id_str = cve_id_str + '{"cve_id":"' +cve_id["id"] + '"}'
                 if index != len(cve_id_list["cve"]) - 1:
-                    cve_id_str = cve_id_str + ","
+                    cve_id_str = f"{cve_id_str},"
             print(cve_id_str)
             if reuse_sys_cve_whitelist == "true":
                 payload = r'{"metadata":{"reuse_sys_cve_allowlist":"true"}}'
@@ -310,16 +352,18 @@ class HarborAPI:
                 payload = r'{"metadata":{"reuse_sys_cve_allowlist":"false"},"cve_whitelist":{"project_id":'+projectid+',"items":['+cve_id_str+r'],"expires_at":'+cve_id_list["expires_at"]+'}}'
             print(payload)
             body=dict(body=json.loads(payload))
-            request(url+"projects/"+projectid+"", 'put', **body)
+            request(f"{url}projects/{projectid}", 'put', **body)
         else:
-            raise Exception(r"Error: Feature {} has no branch {}.".format(sys._getframe().f_code.co_name, branch))
+            raise Exception(
+                f"Error: Feature {sys._getframe().f_code.co_name} has no branch {branch}."
+            )
 
     @get_feature_branch
     def update_interrogation_services(self, cron, **kwargs):
         payload = {"schedule":{"type":"Custom","cron": cron}}
         print(payload)
         body=dict(body=payload)
-        request(url+"system/scanAll/schedule", 'post', **body)
+        request(f"{url}system/scanAll/schedule", 'post', **body)
 
     @get_feature_branch
     def update_systemsetting(self, emailfrom, emailhost, emailport, emailuser, creation, selfreg, token, robot_token, **kwargs):
@@ -348,141 +392,145 @@ class HarborAPI:
         }
         print(payload)
         body=dict(body=payload)
-        request(url+"configurations", 'put', **body)
+        request(f"{url}configurations", 'put', **body)
 
     @get_feature_branch
     def add_project_robot_account(self, project, robot_account, **kwargs):
-        r = request(url+"projects?name="+project+"", 'get')
+        r = request(f"{url}projects?name={project}", 'get')
         projectid = str(r.json()[0]['project_id'])
 
-        if kwargs["branch"] == 1:
-            if len(robot_account["access"]) == 1:
-                robot_account_ac = robot_account["access"][0]
-                payload = {
-                    "name": robot_account["name"],
-                    "access": [
-                        {
-                            "resource": "/project/"+projectid+"/repository",
-                            "action": robot_account_ac["action"]
-                        }
-                    ]
-                }
-            elif len(robot_account["access"]) == 2:
-                payload = {
-                    "name": robot_account["name"],
-                    "access": [
-                        {
-                            "resource": "/project/"+projectid+"/repository",
-                            "action": "pull"
-                        },
-                        {
-                            "resource": "/project/"+projectid+"/repository",
-                            "action": "push"
-                        }
-                    ]
-                }
-            else:
-                raise Exception(r"Error: Robot account count {} is not legal!".format(len(robot_account["access"])))
+        if kwargs["branch"] != 1:
+            raise Exception(
+                f"Error: Feature {sys._getframe().f_code.co_name} has no branch {branch}."
+            )
+        if len(robot_account["access"]) == 1:
+            robot_account_ac = robot_account["access"][0]
+            payload = {
+                "name": robot_account["name"],
+                "access": [
+                    {
+                        "resource": f"/project/{projectid}/repository",
+                        "action": robot_account_ac["action"],
+                    }
+                ],
+            }
+        elif len(robot_account["access"]) == 2:
+            payload = {
+                "name": robot_account["name"],
+                "access": [
+                    {
+                        "resource": f"/project/{projectid}/repository",
+                        "action": "pull",
+                    },
+                    {
+                        "resource": f"/project/{projectid}/repository",
+                        "action": "push",
+                    },
+                ],
+            }
         else:
-            raise Exception(r"Error: Feature {} has no branch {}.".format(sys._getframe().f_code.co_name, branch))
+            raise Exception(
+                f'Error: Robot account count {len(robot_account["access"])} is not legal!'
+            )
         body=dict(body=payload)
-        request(url+"projects/"+projectid+"/robots", 'post', **body)
+        request(f"{url}projects/{projectid}/robots", 'post', **body)
 
     @get_feature_branch
     def add_tag_retention_rule(self, project, tag_retention_rule, **kwargs):
         if tag_retention_rule is None:
-            print(r"No tag retention rule to be populated for project {}.".format(project))
-        r = request(url+"projects?name="+project+"", 'get')
+            print(f"No tag retention rule to be populated for project {project}.")
+        r = request(f"{url}projects?name={project}", 'get')
         projectid = str(r.json()[0]['project_id'])
-        if kwargs["branch"] == 1:
-            payload = {
-                "algorithm":"or",
-                "rules":
-                [
+        if kwargs["branch"] != 1:
+            raise Exception(
+                f'Error: Feature {sys._getframe().f_code.co_name} has no branch {kwargs["branch"]}.'
+            )
+        payload = {
+            "algorithm":"or",
+            "rules":
+            [
+                {
+                    "disabled":False,
+                    "action":"retain",
+                    "scope_selectors":
                     {
-                        "disabled":False,
-                        "action":"retain",
-                        "scope_selectors":
-                        {
-                            "repository":
-                            [
-                                {
-                                    "kind":"doublestar",
-                                    "decoration":"repoMatches",
-                                    "pattern":tag_retention_rule["repository_patten"]
-                                }
-                            ]
-                        },
-                        "tag_selectors":
+                        "repository":
                         [
                             {
                                 "kind":"doublestar",
-                                "decoration":"matches","pattern":tag_retention_rule["tag_decoration"]
+                                "decoration":"repoMatches",
+                                "pattern":tag_retention_rule["repository_patten"]
                             }
-                        ],
-                        "params":{"latestPushedK":tag_retention_rule["latestPushedK"]},
-                        "template":"latestPushedK"
-                    }
-                ],
-                "trigger":
-                {
-                    "kind":"Schedule",
-                    "references":{},
-                    "settings":{"cron":tag_retention_rule["cron"]}
-                },
-                "scope":
-                {
-                "level":"project",
-                    "ref":int(projectid)
-                }
-            }
-            print(payload)
-            body=dict(body=payload)
-            action = "post"
-            request(url+"retentions", action, **body)
-        else:
-            raise Exception(r"Error: Feature {} has no branch {}.".format(sys._getframe().f_code.co_name, kwargs["branch"]))
-
-    @get_feature_branch
-    def add_tag_immutability_rule(self, project, tag_immutability_rule, **kwargs):
-        r = request(url+"projects?name="+project+"", 'get')
-        projectid = str(r.json()[0]['project_id'])
-        if kwargs["branch"] == 1:
-            payload = {
-                "disabled":False,
-                "action":"immutable",
-                "scope_selectors":
-                {
-                    "repository":
+                        ]
+                    },
+                    "tag_selectors":
                     [
                         {
                             "kind":"doublestar",
-                            "decoration":tag_immutability_rule["repo_decoration"],
-                            "pattern":tag_immutability_rule["repo_pattern"]
+                            "decoration":"matches","pattern":tag_retention_rule["tag_decoration"]
                         }
-                    ]
-                },
-                "tag_selectors":
+                    ],
+                    "params":{"latestPushedK":tag_retention_rule["latestPushedK"]},
+                    "template":"latestPushedK"
+                }
+            ],
+            "trigger":
+            {
+                "kind":"Schedule",
+                "references":{},
+                "settings":{"cron":tag_retention_rule["cron"]}
+            },
+            "scope":
+            {
+            "level":"project",
+                "ref":int(projectid)
+            }
+        }
+        print(payload)
+        body=dict(body=payload)
+        request(f"{url}retentions", "post", **body)
+
+    @get_feature_branch
+    def add_tag_immutability_rule(self, project, tag_immutability_rule, **kwargs):
+        r = request(f"{url}projects?name={project}", 'get')
+        projectid = str(r.json()[0]['project_id'])
+        if kwargs["branch"] != 1:
+            raise Exception(
+                f'Error: Feature {sys._getframe().f_code.co_name} has no branch {kwargs["branch"]}.'
+            )
+        payload = {
+            "disabled":False,
+            "action":"immutable",
+            "scope_selectors":
+            {
+                "repository":
                 [
                     {
                         "kind":"doublestar",
-                        "decoration":tag_immutability_rule["tag_decoration"],
-                        "pattern":tag_immutability_rule["tag_pattern"]
+                        "decoration":tag_immutability_rule["repo_decoration"],
+                        "pattern":tag_immutability_rule["repo_pattern"]
                     }
-                ],
-                "project_id":int(projectid),
-                "priority":0,
-                "template":"immutable_template"
-            }
-            print(payload)
-            body=dict(body=payload)
-            request(url+"projects/"+projectid+"/immutabletagrules", 'post', **body)
-        else:
-            raise Exception(r"Error: Feature {} has no branch {}.".format(sys._getframe().f_code.co_name, kwargs["branch"]))
+                ]
+            },
+            "tag_selectors":
+            [
+                {
+                    "kind":"doublestar",
+                    "decoration":tag_immutability_rule["tag_decoration"],
+                    "pattern":tag_immutability_rule["tag_pattern"]
+                }
+            ],
+            "project_id":int(projectid),
+            "priority":0,
+            "template":"immutable_template"
+        }
+        print(payload)
+        body=dict(body=payload)
+        request(f"{url}projects/{projectid}/immutabletagrules", 'post', **body)
 
     @get_feature_branch
     def add_webhook(self, project, webhook, **kwargs):
-        r = request(url+"projects?name="+project+"", 'get')
+        r = request(f"{url}projects?name={project}", 'get')
         projectid = str(r.json()[0]['project_id'])
         if kwargs["branch"] == 1:
             payload = {
@@ -507,7 +555,7 @@ class HarborAPI:
                 "enabled":webhook["enabled"]
             }
             body=dict(body=payload)
-            request(url+"projects/"+projectid+"/webhook/policies", 'post', **body)
+            request(f"{url}projects/{projectid}/webhook/policies", 'post', **body)
         elif kwargs["branch"] == 2:
             payload = {
                 "targets":[
@@ -527,47 +575,50 @@ class HarborAPI:
                     "UPLOAD_CHART",
                     "QUOTA_EXCEED",
                     "QUOTA_WARNING",
-					"REPLICATION",
-					"SCANNING_FAILED",
-					"SCANNING_COMPLETED"
+            "REPLICATION",
+            "SCANNING_FAILED",
+            "SCANNING_COMPLETED"
                 ],
                 "enabled":webhook["enabled"],
                 "name":webhook["name"]
             }
             body=dict(body=payload)
-            request(url+"projects/"+projectid+"/webhook/policies", 'post', **body)
+            request(f"{url}projects/{projectid}/webhook/policies", 'post', **body)
         else:
-            raise Exception(r"Error: Feature {} has no branch {}.".format(sys._getframe().f_code.co_name, kwargs["branch"]))
+            raise Exception(
+                f'Error: Feature {sys._getframe().f_code.co_name} has no branch {kwargs["branch"]}.'
+            )
 
     def update_repoinfo(self, reponame):
         payload = {"description": "testdescription"}
         print(payload)
         body=dict(body=payload)
-        request(url+"repositories/"+reponame+"", 'put', **body)
+        request(f"{url}repositories/{reponame}", 'put', **body)
 
     @get_feature_branch
     def add_distribution(self, distribution, **kwargs):
-        if kwargs["branch"] == 1:
-            payload = {
-                "name":distribution["name"],
-                "endpoint":distribution["endpoint"],
-                "enabled":distribution["enabled"],
-                "vendor":distribution["vendor"],
-                "auth_mode":distribution["auth_mode"],
-                "insecure":distribution["insecure"]
-            }
-            print(payload)
-            body=dict(body=payload)
-            request(url+"p2p/preheat/instances", 'post', **body)
-        else:
-            raise Exception(r"Error: Feature {} has no branch {}.".format(sys._getframe().f_code.co_name, kwargs["branch"]))
+        if kwargs["branch"] != 1:
+            raise Exception(
+                f'Error: Feature {sys._getframe().f_code.co_name} has no branch {kwargs["branch"]}.'
+            )
+        payload = {
+            "name":distribution["name"],
+            "endpoint":distribution["endpoint"],
+            "enabled":distribution["enabled"],
+            "vendor":distribution["vendor"],
+            "auth_mode":distribution["auth_mode"],
+            "insecure":distribution["insecure"]
+        }
+        print(payload)
+        body=dict(body=payload)
+        request(f"{url}p2p/preheat/instances", 'post', **body)
 
     @get_feature_branch
     def get_ca(self, target='/harbor/ca/ca.crt', **kwargs):
         if kwargs["branch"] == 1:
-            url = "https://" + args.endpoint + "/api/systeminfo/getcert"
+            url = f"https://{args.endpoint}/api/systeminfo/getcert"
         elif kwargs["branch"] == 2:
-            url = "https://" + args.endpoint + "/api/v2.0/systeminfo/getcert"
+            url = f"https://{args.endpoint}/api/v2.0/systeminfo/getcert"
         resp = request(url, 'get')
         try:
             ca_content = json.loads(resp.text)
@@ -578,8 +629,7 @@ class HarborAPI:
             try:
                 os.makedirs(ca_path)
             except Exception as e:
-                print(str(e))
-                pass
+                print(e)
         open(target, 'wb').write(str(ca_content).encode('utf-8'))
 
     @get_feature_branch
@@ -588,9 +638,19 @@ class HarborAPI:
         image_b = "busybox"
         repo_name_a, tag_a = push_self_build_image_to_project(project, args.endpoint, 'admin', 'Harbor12345', image_a, "latest")
         repo_name_b, tag_b = push_self_build_image_to_project(project, args.endpoint, 'admin', 'Harbor12345', image_b, "latest")
-        manifests = [args.endpoint+"/"+repo_name_a+":"+tag_a, args.endpoint+"/"+repo_name_b+":"+tag_b]
-        index = args.endpoint+"/"+project+"/"+name+":"+tag
-        docker_manifest_push_to_harbor(index, manifests, args.endpoint, 'admin', 'Harbor12345', cfg_file = args.libpath + "/update_docker_cfg.sh")
+        manifests = [
+            f"{args.endpoint}/{repo_name_a}:{tag_a}",
+            f"{args.endpoint}/{repo_name_b}:{tag_b}",
+        ]
+        index = f"{args.endpoint}/{project}/{name}:{tag}"
+        docker_manifest_push_to_harbor(
+            index,
+            manifests,
+            args.endpoint,
+            'admin',
+            'Harbor12345',
+            cfg_file=f"{args.libpath}/update_docker_cfg.sh",
+        )
 
 def request(url, method, user = None, userp = None, **kwargs):
     if user is None:
@@ -605,7 +665,7 @@ def request(url, method, user = None, userp = None, **kwargs):
         del kwargs['body']
     resp = requests.request(method, url, verify=False, auth=(user, userp), **kwargs)
     if resp.status_code >= 400:
-        raise Exception("[Exception Message] - {}".format(resp.text))
+        raise Exception(f"[Exception Message] - {resp.text}")
     return resp
 
 with open("data.json") as f:
@@ -614,24 +674,26 @@ with open("data.json") as f:
 def pull_image(*image):
     for i in image:
         print("docker pulling image: ", i)
-        os.system("docker pull "+i)
+        os.system(f"docker pull {i}")
 
 def push_image(image, project):
-    os.system("docker tag "+image+" "+args.endpoint+"/"+project+"/"+image)
-    os.system("docker login "+args.endpoint+" -u admin"+" -p Harbor12345")
-    os.system("docker push "+args.endpoint+"/"+project+"/library/"+image)
+    os.system(f"docker tag {image} {args.endpoint}/{project}/{image}")
+    os.system(f"docker login {args.endpoint} -u admin -p Harbor12345")
+    os.system(f"docker push {args.endpoint}/{project}/library/{image}")
 
 def push_signed_image(image, project, tag):
-    print("LOCAL_REGISTRY:{} LOCAL_REGISTRY_NAMESPACE:{}".format(args.LOCAL_REGISTRY, args.LOCAL_REGISTRY_NAMESPACE))
+    print(
+        f"LOCAL_REGISTRY:{args.LOCAL_REGISTRY} LOCAL_REGISTRY_NAMESPACE:{args.LOCAL_REGISTRY_NAMESPACE}"
+    )
     os.system("./sign_image.sh" + " " + args.endpoint + " " + project + " " + image + " " + tag + " " + args.LOCAL_REGISTRY + " " + args.LOCAL_REGISTRY_NAMESPACE)
 
 @get_feature_branch
 def set_url(**kwargs):
     global url
     if kwargs["branch"] == 1:
-        url = "https://"+args.endpoint+"/api/"
+        url = f"https://{args.endpoint}/api/"
     elif kwargs["branch"] == 2:
-        url = "https://"+args.endpoint+"/api/v2.0/"
+        url = f"https://{args.endpoint}/api/v2.0/"
 
 def do_data_creation():
     harborAPI = HarborAPI()

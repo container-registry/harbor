@@ -10,7 +10,7 @@ class Replication(base.Base, object):
 
     def wait_until_jobs_finish(self, rule_id, retry=10, interval=5, **kwargs):
         Succeed = False
-        for i in range(retry):
+        for _ in range(retry):
             Succeed = False
             jobs = self.get_replication_executions(rule_id, **kwargs)
             for job in jobs:
@@ -48,7 +48,7 @@ class Replication(base.Base, object):
     def get_replication_rule(self, param = None, rule_id = None, expect_status_code = 200, **kwargs):
         if rule_id is None:
             if param is None:
-                param = dict()
+                param = {}
             data, status_code, _ = self._get_client(**kwargs).get_replication_policy_with_http_info(param)
         else:
             data, status_code, _ = self._get_client(**kwargs).get_replication_policy_with_http_info(rule_id)
@@ -58,9 +58,11 @@ class Replication(base.Base, object):
     def check_replication_rule_should_exist(self, check_rule_id, expect_rule_name, expect_trigger = None, **kwargs):
         rule_data = self.get_replication_rule(rule_id = check_rule_id, **kwargs)
         if str(rule_data.name) != str(expect_rule_name):
-            raise Exception(r"Check replication rule failed, expect <{}> actual <{}>.".format(expect_rule_name, str(rule_data.name)))
+            raise Exception(
+                f"Check replication rule failed, expect <{expect_rule_name}> actual <{str(rule_data.name)}>."
+            )
         else:
-            print(r"Check Replication rule passed, rule name <{}>.".format(str(rule_data.name)))
+            print(f"Check Replication rule passed, rule name <{str(rule_data.name)}>.")
             #get_trigger = str(rule_data.trigger.kind)
             #if expect_trigger is not None and get_trigger == str(expect_trigger):
             #    print r"Check Replication rule trigger passed, trigger name <{}>.".format(get_trigger)

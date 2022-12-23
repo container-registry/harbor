@@ -33,7 +33,7 @@ class Chart(base.Base, object):
             if chart.name == chart_name:
                 return True
         if expect_status_code == 200:
-            raise Exception(r"Chart {} does not exist in project {}.".format(chart_name, repository))
+            raise Exception(f"Chart {chart_name} does not exist in project {repository}.")
 
     def delete_chart_with_version(self, repository, chart_name, version, expect_status_code = 200, **kwargs):
         client = self._get_client(**kwargs)

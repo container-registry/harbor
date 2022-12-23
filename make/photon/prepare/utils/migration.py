@@ -17,7 +17,9 @@ class MigrationVersion:
     '''
     def __init__(self, version: str):
         self.name = version
-        self.module = importlib.import_module("migrations.version_{}".format(version.replace(".","_")))
+        self.module = importlib.import_module(
+            f'migrations.version_{version.replace(".", "_")}'
+        )
 
     @property
     def down_versions(self):

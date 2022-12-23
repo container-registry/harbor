@@ -58,7 +58,15 @@ class TestProjects(unittest.TestCase):
                 self.assertNotEqual(quota_size, 0)
 
                 #7. Push the image with another tag to project(PA) by user(UA), the check the project quota usage;
-                push_local_image_to_project(harbor_server, user_name, user_001_password, "{}/{}/{}".format(harbor_server, project_name, image), tag, "{}/{}/{}{}".format(harbor_server, project_name, image, image_alias_name), tag + image_alias_name)
+                push_local_image_to_project(
+                    harbor_server,
+                    user_name,
+                    user_001_password,
+                    f"{harbor_server}/{project_name}/{image}",
+                    tag,
+                    f"{harbor_server}/{project_name}/{image}{image_alias_name}",
+                    tag + image_alias_name,
+                )
 
                 #8. Get project quota
                 quota = self.system.get_project_quota("project", project_id, **ADMIN_CLIENT)
@@ -66,7 +74,11 @@ class TestProjects(unittest.TestCase):
 
                 #9. Delete repository(RA) by user(UA);
                 self.repo.delete_repository(project_name, "goharbor%2Falpine", **ADMIN_CLIENT)
-                self.repo.delete_repository(project_name, "goharbor%2Falpine"+image_alias_name, **ADMIN_CLIENT)
+                self.repo.delete_repository(
+                    project_name,
+                    f"goharbor%2Falpine{image_alias_name}",
+                    **ADMIN_CLIENT,
+                )
 
                 #10. Quota should be 0
                 quota = self.system.get_project_quota("project", project_id, **ADMIN_CLIENT)

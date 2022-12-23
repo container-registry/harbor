@@ -79,10 +79,22 @@ class TestProjects(unittest.TestCase):
         TestProjects.registry_id, _ = self.registry.create_registry("https://hub.docker.com", registry_type="docker-hub", access_key = DOCKER_USER, access_secret = DOCKER_PWD, insecure=False, **ADMIN_CLIENT)
 
         #4. Create a pull-based rule for this registry;
-        TestProjects.rule_id, rule_name = self.replication.create_replication_policy(src_registry=v2_swagger_client.Registry(id=int(TestProjects.registry_id)),
-                                            dest_namespace=TestProjects.project_name,
-                                            filters=[v2_swagger_client.ReplicationFilter(type="name",value="library/"+self.image),v2_swagger_client.ReplicationFilter(type="tag",value=self.tag)],
-                                            **ADMIN_CLIENT)
+        (
+            TestProjects.rule_id,
+            rule_name,
+        ) = self.replication.create_replication_policy(
+            src_registry=v2_swagger_client.Registry(
+                id=int(TestProjects.registry_id)
+            ),
+            dest_namespace=TestProjects.project_name,
+            filters=[
+                v2_swagger_client.ReplicationFilter(
+                    type="name", value=f"library/{self.image}"
+                ),
+                v2_swagger_client.ReplicationFilter(type="tag", value=self.tag),
+            ],
+            **ADMIN_CLIENT,
+        )
 
         #5. Check rule should be exist;
         self.replication.check_replication_rule_should_exist(TestProjects.rule_id, rule_name, **ADMIN_CLIENT)

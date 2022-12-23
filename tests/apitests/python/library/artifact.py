@@ -42,7 +42,7 @@ class Artifact(base.Base, object):
             if e.status == 404 and ignore_not_found == True:
                 return None
             else:
-                raise Exception("Failed to get reference, {} {}".format(e.status, e.body))
+                raise Exception(f"Failed to get reference, {e.status} {e.body}")
         else:
             base._assert_status_code(expect_status_code, status_code)
             base._assert_status_code(200, status_code)
@@ -122,23 +122,23 @@ class Artifact(base.Base, object):
                 break
             artifact = self.get_reference_info(project_name, repo_name, reference, **kwargs)
             if expected_scan_status in ["Not Scanned", "No Scan Overview"]:
-                if artifact.scan_overview is None:
-                    if (timeout_count > 24):
-                        continue
-                    print("artifact is not scanned.")
-                    return
-                else:
-                    raise Exception("Artifact should not be scanned {}.".format(artifact.scan_overview))
+                if artifact.scan_overview is not None:
+                    raise Exception(f"Artifact should not be scanned {artifact.scan_overview}.")
 
+                if (timeout_count > 24):
+                    continue
+                print("artifact is not scanned.")
+                return
             scan_status = ''
             for mime_type in report_mime_types:
-                overview = artifact.scan_overview.get(mime_type)
-                if overview:
+                if overview := artifact.scan_overview.get(mime_type):
                     scan_status = overview.scan_status
 
             if scan_status == expected_scan_status:
                 return
-        raise Exception("Scan image result is {}, not as expected {}.".format(scan_status, expected_scan_status))
+        raise Exception(
+            f"Scan image result is {scan_status}, not as expected {expected_scan_status}."
+        )
 
     def check_reference_exist(self, project_name, repo_name, reference, ignore_not_found = False, **kwargs):
         artifact = self.get_reference_info( project_name, repo_name, reference, ignore_not_found=ignore_not_found, **kwargs)
@@ -149,7 +149,7 @@ class Artifact(base.Base, object):
     def waiting_for_reference_exist(self, project_name, repo_name, reference, ignore_not_found = True, period = 60, loop_count = 20, **kwargs):
         _loop_count = loop_count
         while True:
-            print("Waiting for reference {} round...".format(_loop_count))
+            print(f"Waiting for reference {_loop_count} round...")
             _loop_count = _loop_count - 1
             if (_loop_count == 0):
                 break
@@ -158,4 +158,6 @@ class Artifact(base.Base, object):
             if artifact  and artifact !=[]:
                 return  artifact
             time.sleep(period)
-        raise Exception("Reference is not exist {} {} {}.".format(project_name, repo_name, reference))
+        raise Exception(
+            f"Reference is not exist {project_name} {repo_name} {reference}."
+        )

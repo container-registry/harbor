@@ -15,7 +15,7 @@ class ApiProxy(object):
     def __init__(self, registry, args):
         self.registry = registry
         self.args = args
-        self.callbacks = dict()
+        self.callbacks = {}
         self.register_callback("repo", "list", self.list_repo)
         self.register_callback("tag", "list", self.list_tag)
         self.register_callback("tag", "delete", self.delete_tag)
@@ -25,7 +25,7 @@ class ApiProxy(object):
 
     def register_callback(self, target, action, func):
         """ register real actions """
-        if not target in self.callbacks.keys():
+        if target not in self.callbacks.keys():
             self.callbacks[target] = {action: func}
             return
         self.callbacks[target][action] = func
@@ -52,7 +52,7 @@ class ApiProxy(object):
     def list_manifest(self):
         """ list manifest """
         tags = self.registry.getTagList(self.args.repo)["tags"]
-        manifests = list()
+        manifests = []
         if tags is None:
             return None
         for i in tags:

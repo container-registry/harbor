@@ -111,30 +111,28 @@ class Retention(base.Base):
 
     def update_retention_add_rule(self, retention_id, selector_repository="**", selector_tag="**", with_untag="True", expect_status_code = 200, **kwargs):
         retention_rule = v2_swagger_client.RetentionRule(
-                            disabled=False,
-                            action="retain",
-                            template="always",
-                            params= {
-
-                            },
-                            scope_selectors={
-                                "repository": [
-                                    {
-                                        "kind": "doublestar",
-                                        "decoration": "repoMatches",
-                                        "pattern": selector_repository
-                                    }
-                                ]
-                            },
-                            tag_selectors=[
-                                {
-                                    "kind": "doublestar",
-                                    "decoration": "matches",
-                                    "extras":'["untagged":'+with_untag+']',
-                                    "pattern": selector_tag
-                                }
-                            ]
-                        )
+            disabled=False,
+            action="retain",
+            template="always",
+            params={},
+            scope_selectors={
+                "repository": [
+                    {
+                        "kind": "doublestar",
+                        "decoration": "repoMatches",
+                        "pattern": selector_repository,
+                    }
+                ]
+            },
+            tag_selectors=[
+                {
+                    "kind": "doublestar",
+                    "decoration": "matches",
+                    "extras": f'["untagged":{with_untag}]',
+                    "pattern": selector_tag,
+                }
+            ],
+        )
         client = self._get_client(**kwargs)
         policy, status_code, _ = client.get_retention_with_http_info(retention_id)
         base._assert_status_code(200, status_code)

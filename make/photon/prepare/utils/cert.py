@@ -20,7 +20,7 @@ def _get_secret(folder, filename, length=16):
     if os.path.isfile(key_file):
         with open(key_file, 'r') as f:
             key = f.read()
-            print("loaded secret from file: %s" % key_file)
+            print(f"loaded secret from file: {key_file}")
         mark_file(key_file)
         return key
     if not os.path.isdir(folder):
@@ -28,7 +28,7 @@ def _get_secret(folder, filename, length=16):
     key = generate_random_string(length)
     with open(key_file, 'w') as f:
         f.write(key)
-        print("Generated and saved secret to file: %s" % key_file)
+        print(f"Generated and saved secret to file: {key_file}")
     mark_file(key_file)
     return key
 
@@ -41,8 +41,7 @@ def get_secret_key(path):
 
 
 def get_alias(path):
-    alias = _get_secret(path, "defaultalias", length=8)
-    return alias
+    return _get_secret(path, "defaultalias", length=8)
 
 @stat_decorator
 def create_root_cert(subj, key_path="./k.key", cert_path="./cert.crt"):
@@ -54,7 +53,7 @@ def create_root_cert(subj, key_path="./k.key", cert_path="./cert.crt"):
 
 def create_ext_file(cn, ext_filename):
     with open(ext_filename, 'w') as f:
-        f.write("subjectAltName = DNS.1:{}".format(cn))
+        f.write(f"subjectAltName = DNS.1:{cn}")
 
 def san_existed(cert_path):
     try:
@@ -123,16 +122,18 @@ def prepare_trust_ca(config_dict):
     for src_path, dst_filename in (
         (internal_ca_src, internal_ca_filename),
         (ca_bundle_src, storage_ca_bundle_filename)):
-        logging.info('copy {} to shared trust ca dir as name {} ...'.format(src_path, dst_filename))
+        logging.info(
+            f'copy {src_path} to shared trust ca dir as name {dst_filename} ...'
+        )
         # check if source file valied
         if not src_path:
             continue
         real_src_path = get_realpath(str(src_path))
         if not real_src_path.exists():
-            logging.info('ca file {} is not exist'.format(real_src_path))
+            logging.info(f'ca file {real_src_path} is not exist')
             continue
         if not real_src_path.is_file():
-            logging.info('{} is not file'.format(real_src_path))
+            logging.info(f'{real_src_path} is not file')
             continue
 
         dst_path = shared_cert_dir.joinpath(dst_filename)

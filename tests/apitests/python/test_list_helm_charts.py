@@ -59,7 +59,11 @@ class TestProjects(unittest.TestCase):
         TestProjects.project_chart_id, TestProjects.project_chart_name = self.project.create_project(metadata = {"public": "false"}, **TestProjects.USER_CHART_CLIENT)
 
         #3. Upload a chart file to project(PA);
-        self.chart.upload_chart(TestProjects.project_chart_name, r'./tests/apitests/python/mariadb-{}.tgz'.format(TestProjects.VERSION), **TestProjects.API_CHART_CLIENT)
+        self.chart.upload_chart(
+            TestProjects.project_chart_name,
+            f'./tests/apitests/python/mariadb-{TestProjects.VERSION}.tgz',
+            **TestProjects.API_CHART_CLIENT,
+        )
 
         #4. Chart file should be exist in project(PA).
         self.chart.chart_should_exist(TestProjects.project_chart_name, TestProjects.CHART_NAME, **TestProjects.API_CHART_CLIENT)

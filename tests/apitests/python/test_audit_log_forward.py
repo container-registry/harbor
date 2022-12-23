@@ -23,7 +23,7 @@ class TestAuditLogForword(unittest.TestCase, object):
         self.audit_log = Audit_Log()
         self.image = "hello-world"
         self.tag = "latest"
-        self.audit_log_path = LOG_PATH + "audit.log"
+        self.audit_log_path = f"{LOG_PATH}audit.log"
         self.audit_log_forward_endpoint = "harbor-log:10514"
         # 1. Reset audit log forword
         self.config.set_configurations_of_audit_log_forword("", False)
@@ -65,37 +65,37 @@ class TestAuditLogForword(unittest.TestCase, object):
         project_id, project_name = self.project.create_project(metadata = {"public": "false"}, **user_client)
         # 2.2. Get private project of user(UA), user(UA) can see only one private project which is project(PA)
         self.project.projects_should_exist(dict(public=False), expected_count = 1, expected_project_id = project_id, **user_client)
-        
+
         # 3 Verify that Skip Audit Log Database cannot be enabled without Audit Log Forward
         self.config.set_configurations_of_audit_log_forword(skip_audit_log_database=True, expect_status_code=400)
-        
+
         # 4 Enable Audit Log Forward
         self.config.set_configurations_of_audit_log_forword(audit_log_forward_endpoint=self.audit_log_forward_endpoint, expect_status_code=200)
         # 4.1 Verify configuration
         configurations = self.config.get_configurations()
         self.assertEqual(configurations.audit_log_forward_endpoint.value, self.audit_log_forward_endpoint)
         self.assertFalse(configurations.skip_audit_log_database.value)
-        
+
         # 5 Push a new image(IA) in project(PA) by user(UA)
         repo_name, tag = push_self_build_image_to_project(project_name, harbor_server, user_name, user_password, self.image, self.tag)
 
         # 6. Verify that the Audit Log should be in the log database
         first_audit_log = self.audit_log.get_latest_audit_log()
         self.assertEqual(first_audit_log.operation, "create")
-        self.assertEqual(first_audit_log.resource, "{}:{}".format(repo_name, tag))
+        self.assertEqual(first_audit_log.resource, f"{repo_name}:{tag}")
         self.assertEqual(first_audit_log.resource_type, "artifact")
         self.assertEqual(first_audit_log.username, user_name)
         self.assertIsNotNone(first_audit_log.op_time)
-        
+
         # 7. Verify that the Audit Log should be in the audit.log
         TestAuditLogForword.audit_log_file = open(self.audit_log_path, "r")
         latest_line = TestAuditLogForword.audit_log_file.readlines()[-1]
-        self.assertIn('operator="{}"'.format(user_name), latest_line)
+        self.assertIn(f'operator="{user_name}"', latest_line)
         self.assertIn('resourceType="artifact"', latest_line)
         self.assertIn('action:create', latest_line)
-        self.assertIn('resource:{}:{}'.format(repo_name, tag), latest_line)
+        self.assertIn(f'resource:{repo_name}:{tag}', latest_line)
         self.assertIn('time="20', latest_line)
-        
+
         # 8.1 Enable Skip Audit Log Database
         self.config.set_configurations_of_audit_log_forword(skip_audit_log_database=True)
         # 8.1 Verify configuration
@@ -116,12 +116,12 @@ class TestAuditLogForword(unittest.TestCase, object):
 
         # 11. Verify that the Audit Log should be in the audit.log
         latest_line = TestAuditLogForword.audit_log_file.readlines()[-1]
-        self.assertIn('operator="{}"'.format(user_name), latest_line)
+        self.assertIn(f'operator="{user_name}"', latest_line)
         self.assertIn('resourceType="artifact"', latest_line)
         self.assertIn('action:delete', latest_line)
-        self.assertIn('resource:{}'.format(repo_name), latest_line)
+        self.assertIn(f'resource:{repo_name}', latest_line)
         self.assertIn('time="20', latest_line)
-        
+
         # 12 Verify that Skip Audit Log Database cannot be enabled without Audit Log Forward
         self.config.set_configurations_of_audit_log_forword(audit_log_forward_endpoint="", expect_status_code=400)
 

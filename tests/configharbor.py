@@ -26,7 +26,7 @@ for item in args.config :
         reqJson[key] = value
 
 # Sample Basic Auth Url with login values as username and password
-url = "https://"+args.host+"/api/v2.0/configurations"
+url = f"https://{args.host}/api/v2.0/configurations"
 user = args.user
 passwd = args.password
 
@@ -39,10 +39,10 @@ headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
 response = session.put(url, auth=auth_values, data=data, headers=headers)
 
 # Convert JSON to dict and print
-if response.status_code == 200 :
+if response.status_code == 200:
     print("Configure setting success")
-    print("values:"+data)
+    print(f"values:{data}")
     sys.exit(0)
 else:
-    print("Failed with http return code:"+ str(response.status_code))
+    print(f"Failed with http return code:{str(response.status_code)}")
     sys.exit(1)

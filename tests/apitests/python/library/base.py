@@ -44,8 +44,7 @@ def _create_client(server, credential, debug, api_type="products"):
     cfg.debug = debug
 
     proxies = getproxies()
-    proxy = proxies.get('http', proxies.get('all', None))
-    if proxy:
+    if proxy := proxies.get('http', proxies.get('all', None)):
         cfg.proxy = proxy
 
     if cfg.username is None and cfg.password is None:
@@ -88,7 +87,9 @@ def _assert_status_code(expect_code, return_code, err_msg = r"HTTPS status code 
 
 def _assert_status_body(expect_status_body, returned_status_body):
     if str(returned_status_body.strip()).lower().find(expect_status_body.lower()) < 0:
-        raise Exception(r"HTTPS status body s not as we expected. Expected {}, while actual HTTPS status body is {}.".format(expect_status_body, returned_status_body))
+        raise Exception(
+            f"HTTPS status body s not as we expected. Expected {expect_status_body}, while actual HTTPS status body is {returned_status_body}."
+        )
 
 def _random_name(prefix):
     return "%s-%d" % (prefix, int(round(time.time() * 1000)))
@@ -114,22 +115,22 @@ def restart_process(process):
         full_process_name = "/usr/local/bin/containerd"
     else:
         raise Exception("Please input dockerd or containerd for process retarting.")
-    run_command_with_popen("ps aux |grep " + full_process_name)
-    for i in range(10):
-        pid = run_command_with_popen(["pidof " + full_process_name])
+    run_command_with_popen(f"ps aux |grep {full_process_name}")
+    for _ in range(10):
+        pid = run_command_with_popen([f"pidof {full_process_name}"])
         if pid in [None, ""]:
             break
-        run_command_with_popen(["kill " + str(pid)])
+        run_command_with_popen([f"kill {str(pid)}"])
         time.sleep(3)
 
-    run_command_with_popen("ps aux |grep " + full_process_name)
-    run_command_with_popen("rm -rf /var/lib/" + process + "/*")
-    run_command_with_popen(full_process_name + " > ./daemon-local.log 2>&1 &")
+    run_command_with_popen(f"ps aux |grep {full_process_name}")
+    run_command_with_popen(f"rm -rf /var/lib/{process}/*")
+    run_command_with_popen(f"{full_process_name} > ./daemon-local.log 2>&1 &")
     time.sleep(3)
-    pid = run_command_with_popen(["pidof " + full_process_name])
+    pid = run_command_with_popen([f"pidof {full_process_name}"])
     if pid in [None, ""]:
-        raise Exception("Failed to start process {}.".format(full_process_name))
-    run_command_with_popen("ps aux |grep " + full_process_name)
+        raise Exception(f"Failed to start process {full_process_name}.")
+    run_command_with_popen(f"ps aux |grep {full_process_name}")
 
 def run_command_with_popen(command):
     try:
@@ -148,11 +149,10 @@ def run_command(command, expected_error_message = None):
                                          stderr=subprocess.STDOUT,
                                          universal_newlines=True)
     except subprocess.CalledProcessError as e:
-        if expected_error_message is not None:
-            if str(e.output).lower().find(expected_error_message.lower()) < 0:
-                raise Exception(r"Error message is not as expected {}".format(expected_error_message))
-        else:
-            raise Exception('Error: Exited with error code: %s.'% (e.returncode))
+        if expected_error_message is None:
+            raise Exception(f'Error: Exited with error code: {e.returncode}.')
+        if str(e.output).lower().find(expected_error_message.lower()) < 0:
+            raise Exception(f"Error message is not as expected {expected_error_message}")
     else:
         return output
 
@@ -173,18 +173,18 @@ class Base(object):
         self.client = _create_client(server, credential, debug, api_type=api_type)
 
     def _get_client(self, **kwargs):
-        if len(kwargs) == 0:
+        if not kwargs:
             return self.client
 
         server = self.server
         if "endpoint" in kwargs:
             server.endpoint = kwargs.get("endpoint")
         if "verify_ssl" in kwargs:
-            if not isinstance(kwargs.get("verify_ssl"), bool):
-                server.verify_ssl = kwargs.get("verify_ssl") == "True"
-            else:
-                server.verify_ssl = kwargs.get("verify_ssl")
-
+            server.verify_ssl = (
+                kwargs.get("verify_ssl")
+                if isinstance(kwargs.get("verify_ssl"), bool)
+                else kwargs.get("verify_ssl") == "True"
+            )
         credential = Credential(
             kwargs.get("type", self.credential.type),
             kwargs.get("username", self.credential.username),

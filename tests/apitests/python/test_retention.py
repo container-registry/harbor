@@ -55,7 +55,7 @@ class TestProjects(unittest.TestCase):
     def testTagRetention(self):
         user_ra_password = "Aa123456"
         user_ra_id, user_ra_name = self.user.create_user(user_password=user_ra_password, **ADMIN_CLIENT)
-        print("Created user: %s, id: %s" % (user_ra_name, user_ra_id))
+        print(f"Created user: {user_ra_name}, id: {user_ra_id}")
         TestProjects.USER_RA_CLIENT = dict(endpoint=ADMIN_CLIENT["endpoint"],
                                    username=user_ra_name,
                                    password=user_ra_password)
@@ -76,11 +76,21 @@ class TestProjects(unittest.TestCase):
 
         tag_data_artifact2_image2 = self.artifact.get_reference_info(TestProjects.project_src_repo_name, self.repo_name_2, "latest", **TestProjects.USER_RA_CLIENT)
 
-        tags = list_image_tags(harbor_server, TestProjects.project_src_repo_name+"/"+self.repo_name_1, user_ra_name, user_ra_password)
+        tags = list_image_tags(
+            harbor_server,
+            f"{TestProjects.project_src_repo_name}/{self.repo_name_1}",
+            user_ra_name,
+            user_ra_password,
+        )
         #Delete all 2 tags of "artifact3" in repostory "image1";
         self.artifact.delete_tag(TestProjects.project_src_repo_name, self.repo_name_1, "3.0", "latest", **TestProjects.USER_RA_CLIENT)
         self.artifact.delete_tag(TestProjects.project_src_repo_name, self.repo_name_1, "3.0", "3.0", **TestProjects.USER_RA_CLIENT)
-        tags = list_image_tags(harbor_server, TestProjects.project_src_repo_name+"/"+self.repo_name_1, user_ra_name, user_ra_password)
+        tags = list_image_tags(
+            harbor_server,
+            f"{TestProjects.project_src_repo_name}/{self.repo_name_1}",
+            user_ra_name,
+            user_ra_password,
+        )
 
         resp=self.repo.list_repositories(TestProjects.project_src_repo_name, **TestProjects.USER_RA_CLIENT)
         self.assertEqual(len(resp), 4)
@@ -104,7 +114,7 @@ class TestProjects(unittest.TestCase):
         print("Task 0 log begin:-----------------------------")
         i=0
         for line in resp.split("\n"):
-            print("Line"+str(i)+": "+line)
+            print(f"Line{str(i)}: {line}")
             i=i+1
         print("Task 0 log end:-----------------------------")
 

@@ -60,26 +60,25 @@ class Robot(base.Base, object):
         if has_pull_right is False and has_push_right is False:
             has_pull_right = True
         access_list = []
-        action_pull = "pull"
-        action_push = "push"
-        action_read = "read"
-        action_create = "create"
         if has_pull_right is True:
+            action_pull = "pull"
             robotAccountAccess = v2_swagger_client.Access(resource = "repository", action = action_pull)
             access_list.append(robotAccountAccess)
         if has_push_right is True:
+            action_push = "push"
             robotAccountAccess = v2_swagger_client.Access(resource = "repository", action = action_push)
             access_list.append(robotAccountAccess)
         if has_chart_read_right is True:
+            action_read = "read"
             robotAccountAccess = v2_swagger_client.Access(resource = "helm-chart", action = action_read)
             access_list.append(robotAccountAccess)
         if has_chart_create_right is True:
+            action_create = "create"
             robotAccountAccess = v2_swagger_client.Access(resource = "helm-chart-version", action = action_create)
             access_list.append(robotAccountAccess)
 
         robotaccountPermissions = v2_swagger_client.RobotPermission(kind = "project", namespace = project_name, access = access_list)
-        permission_list = []
-        permission_list.append(robotaccountPermissions)
+        permission_list = [robotaccountPermissions]
         robotAccountCreate = v2_swagger_client.RobotCreate(name=robot_name, description=robot_desc, duration=duration, level="project", permissions = permission_list)
 
         data = []

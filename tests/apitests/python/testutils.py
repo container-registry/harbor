@@ -4,16 +4,16 @@ import warnings
 from functools import wraps
 
 sys.path.insert(0, os.environ.get("SWAGGER_CLIENT_PATH", ''))
-path=os.getcwd() + "/library"
+path = f"{os.getcwd()}/library"
 sys.path.insert(0, path)
 
-path=os.getcwd() + "/tests/apitests/python/library"
+path = f"{os.getcwd()}/tests/apitests/python/library"
 sys.path.insert(0, path)
-path=os.getcwd() + "/tests/apitests/python/"
+path = f"{os.getcwd()}/tests/apitests/python/"
 sys.path.insert(0, path)
 print(sys.path)
 
-files_directory = os.getcwd() + "/tests/files/"
+files_directory = f"{os.getcwd()}/tests/files/"
 
 import v2_swagger_client
 import swagger_client.models
@@ -22,16 +22,16 @@ admin_user = "admin"
 admin_pwd = "Harbor12345"
 
 harbor_server = os.environ.get("HARBOR_HOST", '')
-harbor_url = "https://{}".format(harbor_server)
+harbor_url = f"https://{harbor_server}"
 #CLIENT=dict(endpoint="https://"+harbor_server+"/api")
 ADMIN_CLIENT=dict(endpoint = os.environ.get("HARBOR_HOST_SCHEMA", "https")+ "://"+harbor_server+"/api/v2.0", username = admin_user, password =  admin_pwd)
 CHART_API_CLIENT=dict(endpoint = os.environ.get("HARBOR_HOST_SCHEMA", "https")+ "://"+harbor_server+"/api", username = admin_user, password =  admin_pwd)
 USER_ROLE=dict(admin=0,normal=1)
 TEARDOWN = os.environ.get('TEARDOWN', 'true').lower() in ('true', 'yes')
-notary_url = os.environ.get('NOTARY_URL', 'https://'+harbor_server+':4443')
+notary_url = os.environ.get('NOTARY_URL', f'https://{harbor_server}:4443')
 DOCKER_USER = os.environ.get('DOCKER_USER', '')
 DOCKER_PWD = os.environ.get('DOCKER_PWD', '')
-METRIC_URL = os.environ.get('METRIC_URL', 'http://'+harbor_server+':9090')
+METRIC_URL = os.environ.get('METRIC_URL', f'http://{harbor_server}:9090')
 LOG_PATH = os.environ.get('LOG_PATH', '/var/log/harbor/')
 BASE_IMAGE = dict(name='busybox', tag='latest')
 BASE_IMAGE_ABS_PATH_NAME = '/' + BASE_IMAGE['name'] + '.tar'
@@ -39,37 +39,34 @@ BASE_IMAGE_ABS_PATH_NAME = '/' + BASE_IMAGE['name'] + '.tar'
 def GetProductApi(username, password, harbor_server= os.environ.get("HARBOR_HOST", '')):
 
     cfg = swagger_client.Configuration()
-    cfg.host = "https://"+harbor_server+"/api/v2.0"
+    cfg.host = f"https://{harbor_server}/api/v2.0"
     cfg.username = username
     cfg.password = password
     cfg.verify_ssl = False
     cfg.debug = True
     api_client = swagger_client.ApiClient(cfg)
-    api_instance = swagger_client.ProductsApi(api_client)
-    return api_instance
+    return swagger_client.ProductsApi(api_client)
 
 def GetRepositoryApi(username, password, harbor_server= os.environ.get("HARBOR_HOST", '')):
 
     cfg = v2_swagger_client.Configuration()
-    cfg.host = "https://"+harbor_server+"/api/v2.0"
+    cfg.host = f"https://{harbor_server}/api/v2.0"
     cfg.username = username
     cfg.password = password
     cfg.verify_ssl = False
     cfg.debug = True
     api_client = v2_swagger_client.ApiClient(cfg)
-    api_instance = v2_swagger_client.RepositoryApi(api_client)
-    return api_instance
+    return v2_swagger_client.RepositoryApi(api_client)
 
 def GetUserGroupApi(username, password, harbor_server= os.environ.get("HARBOR_HOST", '')):
     cfg = v2_swagger_client.Configuration()
-    cfg.host = "https://"+harbor_server+"/api/v2.0"
+    cfg.host = f"https://{harbor_server}/api/v2.0"
     cfg.username = username
     cfg.password = password
     cfg.verify_ssl = False
     cfg.debug = True
     api_client = v2_swagger_client.ApiClient(cfg)
-    api_instance = v2_swagger_client.UsergroupApi(api_client)
-    return api_instance
+    return v2_swagger_client.UsergroupApi(api_client)
 
 class TestResult(object):
     def __init__(self):
@@ -82,7 +79,7 @@ class TestResult(object):
         if self.num_errors > 0:
             for each_err_msg in self.error_message:
                 print("Error message:", each_err_msg)
-            raise Exception(r"Test case failed with {} errors.".format(self.num_errors))
+            raise Exception(f"Test case failed with {self.num_errors} errors.")
 
 def suppress_urllib3_warning(func):
     @wraps(func)

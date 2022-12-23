@@ -37,7 +37,7 @@ class TestSysCVEAllowlist(unittest.TestCase):
         user_ra_password = "Aa123456"
         print("Setup: Creating user for test")
         user_ra_id, user_ra_name = self.user.create_user(user_password=user_ra_password, **ADMIN_CLIENT)
-        print("Created user: %s, id: %s" % (user_ra_name, user_ra_id))
+        print(f"Created user: {user_ra_name}, id: {user_ra_id}")
         self.USER_RA_CLIENT = dict(endpoint=ADMIN_CLIENT["endpoint"],
                                    username=user_ra_name,
                                    password=user_ra_password)
@@ -53,7 +53,11 @@ class TestSysCVEAllowlist(unittest.TestCase):
     def testSysCVEAllowlist(self):
         # 1. User(RA) reads the system level CVE allowlist and it's empty.
         wl = self.system_cve_allowlist.get_cve_allowlist(**self.USER_RA_CLIENT)
-        self.assertEqual(0, len(wl.items), "The initial system level CVE allowlist is not empty: %s" % wl.items)
+        self.assertEqual(
+            0,
+            len(wl.items),
+            f"The initial system level CVE allowlist is not empty: {wl.items}",
+        )
         # 2. User(RA) updates the system level CVE allowlist, verify it's failed.
         cves = ['CVE-2019-12310']
         self.system_cve_allowlist.set_cve_allowlist(None, 403, *cves, **self.USER_RA_CLIENT)

@@ -67,7 +67,7 @@ class InternalTLS:
             if len(name_parts) < 3:
                 return object.__getattribute__(self, name)
 
-            filename = '{}.{}'.format('_'.join(name_parts[:-2]), name_parts[-2])
+            filename = f"{'_'.join(name_parts[:-2])}.{name_parts[-2]}"
 
             if filename in self.required_filenames:
                 return os.path.join(self.data_volume, 'secret', 'tls', filename)
@@ -84,25 +84,25 @@ class InternalTLS:
         if not path.exists:
             if filename == 'harbor_internal_ca.crt':
                 return
-            raise Exception('File {} not exist'.format(filename))
+            raise Exception(f'File {filename} not exist')
 
         if not path.is_file:
-            raise Exception('invalid {}'.format(filename))
+            raise Exception(f'invalid {filename}')
 
         # check key file permission
         if filename.endswith('.key') and not check_permission(path, mode=0o600):
-            raise Exception('key file {} permission is not 600'.format(filename))
+            raise Exception(f'key file {filename} permission is not 600')
 
         # check certificate file
         if filename.endswith('.crt'):
             if not owner_can_read(path.stat().st_mode):
                 # check owner can read cert file
-                raise Exception('File {} should readable by owner'.format(filename))
+                raise Exception(f'File {filename} should readable by owner')
             if not san_existed(path):
                 # check SAN included
                 if filename == 'harbor_internal_ca.crt':
                     return
-                raise Exception('cert file {} should include SAN'.format(filename))
+                raise Exception(f'cert file {filename} should include SAN')
 
     def validate(self):
         if not self.enabled:
@@ -110,7 +110,7 @@ class InternalTLS:
             return
 
         if not internal_tls_dir.exists():
-            raise Exception('Internal dir for tls {} not exist'.format(internal_tls_dir))
+            raise Exception(f'Internal dir for tls {internal_tls_dir} not exist')
 
         for filename in self.required_filenames:
             self._check(filename)
@@ -206,7 +206,7 @@ class Trace:
             raise Exception('Only can have one trace exporter at a time')
         elif self.jaeger.enabled:
             self.jaeger.validate()
-        elif self.otel.enabled:
+        else:
             self.otel.validate()
 
 

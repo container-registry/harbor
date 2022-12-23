@@ -44,4 +44,4 @@ def prepare_core(config_dict, with_notary, with_trivy, with_chartmuseum):
 
 def copy_core_config(core_templates_path, core_config_path):
     shutil.copyfile(core_templates_path, core_config_path)
-    print("Generated configuration file: %s" % core_config_path)
+    print(f"Generated configuration file: {core_config_path}")

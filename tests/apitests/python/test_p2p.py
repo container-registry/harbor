@@ -91,8 +91,7 @@ class TestP2P(unittest.TestCase):
         self.do_validate("harbor")
 
     def suite():
-        suite = unittest.TestSuite(unittest.makeSuite(TestP2P))
-        return suite
+        return unittest.TestSuite(unittest.makeSuite(TestP2P))
 
 if __name__ == '__main__':
     result = unittest.TextTestRunner(sys.stdout, verbosity=2, failfast=True).run(TestP2P.suite())

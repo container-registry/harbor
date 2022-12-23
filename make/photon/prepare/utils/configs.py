@@ -48,15 +48,16 @@ def validate(conf: dict, **kwargs):
     valid_storage_drivers = ["filesystem", "azure", "gcs", "s3", "swift", "oss"]
     storage_provider_name = conf.get("storage_provider_name")
     if storage_provider_name not in valid_storage_drivers:
-        raise Exception("Error: storage driver %s is not supported, only the following ones are supported: %s" % (
-            storage_provider_name, ",".join(valid_storage_drivers)))
+        raise Exception(
+            f'Error: storage driver {storage_provider_name} is not supported, only the following ones are supported: {",".join(valid_storage_drivers)}'
+        )
 
     # original is registry_storage_provider_config
     storage_provider_config = conf.get("storage_provider_config")
-    if storage_provider_name != "filesystem":
-        if storage_provider_config == "":
-            raise Exception(
-                "Error: no provider configurations are provided for provider %s" % storage_provider_name)
+    if storage_provider_name != "filesystem" and storage_provider_config == "":
+        raise Exception(
+            f"Error: no provider configurations are provided for provider {storage_provider_name}"
+        )
     # ca_bundle validate
     if conf.get('registry_custom_ca_bundle_path'):
         registry_custom_ca_bundle_path = conf.get('registry_custom_ca_bundle_path') or ''
@@ -70,7 +71,7 @@ def validate(conf: dict, **kwargs):
         except Exception as e:
             logging.error(e)
             raise Exception('Can not get file info')
-        err_msg = 'Cert File {} should be owned by user with uid 10000 or readable by others'.format(registry_custom_ca_bundle_path)
+        err_msg = f'Cert File {registry_custom_ca_bundle_path} should be owned by user with uid 10000 or readable by others'
         if uid == DEFAULT_UID and not owner_can_read(st_mode):
             raise Exception(err_msg)
         if uid != DEFAULT_UID and not other_can_read(st_mode):

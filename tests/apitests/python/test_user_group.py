@@ -41,12 +41,10 @@ class TestUserGroup(unittest.TestCase):
         self.conf= Configurations()
         self.conf.set_configurations_of_ldap(ldap_filter="", ldap_group_attribute_name="cn", ldap_group_base_dn="ou=groups,dc=example,dc=com",
                                              ldap_group_search_filter="objectclass=groupOfNames", ldap_group_search_scope=2, **ADMIN_CLIENT)
-        pass
 
     def tearDown(self):
         if self.groupId > 0 :
             self.usergroup_api.delete_user_group(group_id=self.groupId)
-        pass
 
     def testAddUpdateUserGroup(self):
         """Test UserGroup"""
@@ -69,8 +67,6 @@ class TestUserGroup(unittest.TestCase):
 
         new_user_group = self.usergroup_api.get_user_group(group_id=self.groupId)
         self.assertEqual("newharbor_group", new_user_group.group_name)
-
-        pass
 
 
 if __name__ == '__main__':

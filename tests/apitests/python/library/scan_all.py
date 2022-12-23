@@ -21,13 +21,16 @@ class ScanAll(base.Base):
         try:
             _, status_code, _ = self._get_client(**kwargs).create_scan_all_schedule_with_http_info(schedule)
         except ApiException as e:
-            if e.status == expect_status_code:
-                if expect_response_body is not None and e.body.strip() != expect_response_body.strip():
-                    raise Exception(r"Create scan all schedule response body is not as expected {} actual status is {}.".format(expect_response_body.strip(), e.body.strip()))
-                else:
-                    return e.reason, e.body
+            if e.status != expect_status_code:
+                raise Exception(
+                    f"Create scan all schedule result is not as expected {expect_status_code} actual status is {e.status}."
+                )
+            if expect_response_body is not None and e.body.strip() != expect_response_body.strip():
+                raise Exception(
+                    f"Create scan all schedule response body is not as expected {expect_response_body.strip()} actual status is {e.body.strip()}."
+                )
             else:
-                raise Exception(r"Create scan all schedule result is not as expected {} actual status is {}.".format(expect_status_code, e.status))
+                return e.reason, e.body
         base._assert_status_code(expect_status_code, status_code)
 
     def scan_all_now(self, **kwargs):

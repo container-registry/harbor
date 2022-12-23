@@ -32,18 +32,24 @@ def prepare_env_notary(nginx_config_dir):
 
     # If openssl installed, using it to check san existed in cert.
     # Remove cert file if it not contains san
-    if signer_cert_secret_path.exists() and openssl_installed():
-        if not san_existed(signer_cert_secret_path):
-            try:
-                signer_cert_secret_path.unlink()
-            except FileNotFoundError:
-                pass
-    if old_signer_cert_secret_path.exists() and openssl_installed():
-        if not san_existed(old_signer_cert_secret_path):
-            try:
-                old_signer_cert_secret_path.unlink()
-            except FileNotFoundError:
-                pass
+    if (
+        signer_cert_secret_path.exists()
+        and openssl_installed()
+        and not san_existed(signer_cert_secret_path)
+    ):
+        try:
+            signer_cert_secret_path.unlink()
+        except FileNotFoundError:
+            pass
+    if (
+        old_signer_cert_secret_path.exists()
+        and openssl_installed()
+        and not san_existed(old_signer_cert_secret_path)
+    ):
+        try:
+            old_signer_cert_secret_path.unlink()
+        except FileNotFoundError:
+            pass
 
     # In version 1.8 the secret path changed
     # If all cert, key and ca files are existed in new location don't do anything

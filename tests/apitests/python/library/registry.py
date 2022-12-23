@@ -26,7 +26,7 @@ class Registry(base.Base, object):
         for registry in registries or []:
             if registry.endpoint == endpoint:
                 return registry.id
-        raise Exception("registry %s not found" % endpoint)
+        raise Exception(f"registry {endpoint} not found")
 
     def delete_registry(self, registry_id, expect_status_code = 200, **kwargs):
         client = self._get_client(**kwargs)

@@ -28,15 +28,15 @@ def validate(conf, **kwargs):
                 "Error: The protocol is https but attribute ssl_cert is not set")
         cert_path = conf.get("configuration", "ssl_cert")
         if not os.path.isfile(cert_path):
-            raise Exception(
-                "Error: The path for certificate: %s is invalid" % cert_path)
+            raise Exception(f"Error: The path for certificate: {cert_path} is invalid")
         if not conf.has_option("configuration", "ssl_cert_key"):
             raise Exception(
                 "Error: The protocol is https but attribute ssl_cert_key is not set")
         cert_key_path = conf.get("configuration", "ssl_cert_key")
         if not os.path.isfile(cert_key_path):
             raise Exception(
-                "Error: The path for certificate key: %s is invalid" % cert_key_path)
+                f"Error: The path for certificate key: {cert_key_path} is invalid"
+            )
 
     # Storage validate
     valid_storage_drivers = ["filesystem",
@@ -44,15 +44,16 @@ def validate(conf, **kwargs):
     storage_provider_name = conf.get(
         "configuration", "registry_storage_provider_name").strip()
     if storage_provider_name not in valid_storage_drivers:
-        raise Exception("Error: storage driver %s is not supported, only the following ones are supported: %s" % (
-            storage_provider_name, ",".join(valid_storage_drivers)))
+        raise Exception(
+            f'Error: storage driver {storage_provider_name} is not supported, only the following ones are supported: {",".join(valid_storage_drivers)}'
+        )
 
     storage_provider_config = conf.get(
         "configuration", "registry_storage_provider_config").strip()
-    if storage_provider_name != "filesystem":
-        if storage_provider_config == "":
-            raise Exception(
-                "Error: no provider configurations are provided for provider %s" % storage_provider_name)
+    if storage_provider_name != "filesystem" and storage_provider_config == "":
+        raise Exception(
+            f"Error: no provider configurations are provided for provider {storage_provider_name}"
+        )
 
 def validate_crt_subj(dirty_subj):
     subj_list = [item for item in dirty_subj.strip().split("/") \
@@ -78,7 +79,7 @@ def prepare_dir(root: str, *args, **kwargs) -> str:
          absolute_path.chmod(mode)
 
     # if uid or gid not None, then change the ownership of this dir
-    if not(gid is None and uid is None):
+    if gid is not None or uid is not None:
         dir_uid, dir_gid = absolute_path.stat().st_uid, absolute_path.stat().st_gid
         if uid is None:
             uid = dir_uid
@@ -97,7 +98,7 @@ def delfile(src):
     if os.path.isfile(src):
         try:
             os.remove(src)
-            print("Clearing the configuration file: %s" % src)
+            print(f"Clearing the configuration file: {src}")
         except Exception as e:
             print(e)
     elif os.path.isdir(src):
@@ -122,23 +123,21 @@ def check_permission(path: str, uid:int = None, gid:int = None, mode:int = None)
         return False
     if gid is not None and gid != path.stat().st_gid:
         return False
-    if mode is not None and (path.stat().st_mode - mode) % 0o1000 != 0:
-        return False
-    return True
+    return mode is None or (path.stat().st_mode - mode) % 0o1000 == 0
 
 
 def owner_can_read(st_mode: int) -> bool:
     """
     Check if owner have the read permission of this st_mode
     """
-    return True if st_mode & 0o400 else False
+    return bool(st_mode & 0o400)
 
 
 def other_can_read(st_mode: int) -> bool:
     """
     Check if other user have the read permission of this st_mode
     """
-    return True if st_mode & 0o004 else False
+    return bool(st_mode & 0o004)
 
 
 # decorator actions
@@ -147,10 +146,11 @@ def stat_decorator(func):
     def check_wrapper(*args, **kw):
         stat = func(*args, **kw)
         if stat == 0:
-            print("Successfully called func: %s" % func.__name__)
+            print(f"Successfully called func: {func.__name__}")
         else:
-            print("Failed to call func: %s" % func.__name__)
+            print(f"Failed to call func: {func.__name__}")
             sys.exit(1)
+
     return check_wrapper
 
 

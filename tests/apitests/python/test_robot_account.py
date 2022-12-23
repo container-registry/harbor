@@ -195,7 +195,14 @@ class TestRobotAccount(unittest.TestCase):
         #1. Define a number of access lists;
         CHART_FILE_LIST = [dict(name = 'prometheus', version='7.0.2'), dict(name = 'harbor', version='0.2.0')]
         for i in range(2):
-            base.run_command( ["curl", r"-o", "./tests/apitests/python/{}-{}.tgz".format(CHART_FILE_LIST[i]["name"], CHART_FILE_LIST[i]["version"]), "https://storage.googleapis.com/harbor-builds/helm-chart-test-files/{}-{}.tgz".format(CHART_FILE_LIST[i]["name"], CHART_FILE_LIST[i]["version"])])
+            base.run_command(
+                [
+                    "curl",
+                    r"-o",
+                    f'./tests/apitests/python/{CHART_FILE_LIST[i]["name"]}-{CHART_FILE_LIST[i]["version"]}.tgz',
+                    f'https://storage.googleapis.com/harbor-builds/helm-chart-test-files/{CHART_FILE_LIST[i]["name"]}-{CHART_FILE_LIST[i]["version"]}.tgz',
+                ]
+            )
 
         # In this priviledge check list, make sure that each of lines and rows must
         #   contains both True and False value.
@@ -205,10 +212,9 @@ class TestRobotAccount(unittest.TestCase):
             [True, False, True, False, True, False, True, False, True, True],
             [False, False, False, True, False, True, False, True, True, False]
         ]
-        access_list_list = []
-        for i in range(len(check_list)):
-            access_list_list.append(self.robot.create_access_list(check_list[i]))
-
+        access_list_list = [
+            self.robot.create_access_list(check) for check in check_list
+        ]
         #2. Create the same number of private projects;
         robot_account_Permissions_list = []
         project_access_list = []
@@ -225,6 +231,7 @@ class TestRobotAccount(unittest.TestCase):
         SYSTEM_RA_CLIENT = dict(endpoint = TestRobotAccount.url, username = system_robot_account.name, password = system_robot_account.secret)
         SYSTEM_RA_CHART_CLIENT = dict(endpoint = CHART_API_CLIENT["endpoint"], username = SYSTEM_RA_CLIENT["username"], password = SYSTEM_RA_CLIENT["password"])
 
+        tag_for_del = "v1.0.0"
         #4. Verify the system robot account has all the corresponding rights;
         for project_access in project_access_list:
             print(r"project_access:", project_access)
@@ -233,7 +240,6 @@ class TestRobotAccount(unittest.TestCase):
             else:
                 push_self_build_image_to_project(project_access["project_name"], harbor_server, SYSTEM_RA_CLIENT["username"], SYSTEM_RA_CLIENT["password"], "test_unpushable", "v6.8.1", expected_error_message = "unauthorized to access repository")
 
-            tag_for_del = "v1.0.0"
             repo_name, tag = push_self_build_image_to_project(project_access["project_name"], harbor_server, ADMIN_CLIENT["username"], ADMIN_CLIENT["password"], "test_del_artifact", tag_for_del)
             if project_access["check_list"][0]:    #---repository:pull---
                 pull_harbor_image(harbor_server, SYSTEM_RA_CLIENT["username"], SYSTEM_RA_CLIENT["password"], repo_name, tag_for_del)
@@ -246,16 +252,29 @@ class TestRobotAccount(unittest.TestCase):
                 self.artifact.delete_artifact(project_access["project_name"], repo_name.split('/')[1], tag_for_del, expect_status_code = 403, **SYSTEM_RA_CLIENT)
 
             #Prepare for chart read and delete
-            self.chart.upload_chart(project_access["project_name"], r'./tests/apitests/python/{}-{}.tgz'.format(CHART_FILE_LIST[1]["name"], CHART_FILE_LIST[1]["version"]), **CHART_API_CLIENT)
+            self.chart.upload_chart(
+                project_access["project_name"],
+                f'./tests/apitests/python/{CHART_FILE_LIST[1]["name"]}-{CHART_FILE_LIST[1]["version"]}.tgz',
+                **CHART_API_CLIENT,
+            )
             if project_access["check_list"][3]:    #---helm-chart:read---
                 library.helm.helm2_fetch_chart_file("chart_repo_" + base._random_name("repo"), harbor_url, project_access["project_name"], SYSTEM_RA_CLIENT["username"], SYSTEM_RA_CLIENT["password"], CHART_FILE_LIST[1]["name"])
             else:
                 library.helm.helm2_fetch_chart_file("chart_repo_" + base._random_name("repo"), harbor_url, project_access["project_name"], SYSTEM_RA_CLIENT["username"], SYSTEM_RA_CLIENT["password"], CHART_FILE_LIST[1]["name"], expected_add_repo_error_message = "403 Forbidden")
 
             if project_access["check_list"][4]:    #---helm-chart-version:create---
-                self.chart.upload_chart(project_access["project_name"], r'./tests/apitests/python/{}-{}.tgz'.format(CHART_FILE_LIST[0]["name"], CHART_FILE_LIST[0]["version"]), **SYSTEM_RA_CHART_CLIENT)
+                self.chart.upload_chart(
+                    project_access["project_name"],
+                    f'./tests/apitests/python/{CHART_FILE_LIST[0]["name"]}-{CHART_FILE_LIST[0]["version"]}.tgz',
+                    **SYSTEM_RA_CHART_CLIENT,
+                )
             else:
-                self.chart.upload_chart(project_access["project_name"], r'./tests/apitests/python/{}-{}.tgz'.format(CHART_FILE_LIST[0]["name"], CHART_FILE_LIST[0]["version"]), expect_status_code = 403, **SYSTEM_RA_CHART_CLIENT)
+                self.chart.upload_chart(
+                    project_access["project_name"],
+                    f'./tests/apitests/python/{CHART_FILE_LIST[0]["name"]}-{CHART_FILE_LIST[0]["version"]}.tgz',
+                    expect_status_code=403,
+                    **SYSTEM_RA_CHART_CLIENT,
+                )
 
             if project_access["check_list"][5]:    #---helm-chart-version:delete---
                 self.chart.delete_chart_with_version(project_access["project_name"], CHART_FILE_LIST[1]["name"], CHART_FILE_LIST[1]["version"], **SYSTEM_RA_CHART_CLIENT)
@@ -358,15 +377,20 @@ class TestRobotAccount(unittest.TestCase):
         #21. Verify the system robot account has no the corresponding right;
         print("system_robot_account_cover_all:", system_robot_account_cover_all)
         SYSTEM_RA_CLIENT_COVER_ALL = dict(endpoint = TestRobotAccount.url, username = system_robot_account_cover_all.name, password = system_robot_account_cover_all.secret)
-        projects = self.project.get_projects(dict(), **ADMIN_CLIENT)
+        projects = self.project.get_projects({}, **ADMIN_CLIENT)
         print("All projects:", projects)
-        project_access_list = []
-        for i in range(len(projects)):
-            project_access_list.append(dict(project_name = projects[i].name, project_id = projects[i].project_id, check_list = all_true_access_list))
+        project_access_list = [
+            dict(
+                project_name=projects[i].name,
+                project_id=projects[i].project_id,
+                check_list=all_true_access_list,
+            )
+            for i in range(len(projects))
+        ]
         self.verify_repository_pushable(project_access_list, SYSTEM_RA_CLIENT_COVER_ALL)
 
 if __name__ == '__main__':
     suite = unittest.TestSuite(unittest.makeSuite(TestRobotAccount))
     result = unittest.TextTestRunner(sys.stdout, verbosity=2, failfast=True).run(suite)
     if not result.wasSuccessful():
-        raise Exception(r"Robot account test failed: {}".format(result))
+        raise Exception(f"Robot account test failed: {result}")

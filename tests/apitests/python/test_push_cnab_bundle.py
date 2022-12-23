@@ -70,7 +70,7 @@ class TestCNAB(unittest.TestCase):
         TestCNAB.project_id, TestCNAB.project_name = TestCNAB.project.create_project(metadata = {"public": "false"}, **TestCNAB.USER_CLIENT)
 
         #3. Push bundle to harbor as repository(RA);
-        target = harbor_server + "/" + TestCNAB.project_name  + "/" + TestCNAB.cnab_repo_name  + ":" + TestCNAB.cnab_tag
+        target = f"{harbor_server}/{TestCNAB.project_name}/{TestCNAB.cnab_repo_name}:{TestCNAB.cnab_tag}"
         TestCNAB.reference_sha256 = library.cnab.push_cnab_bundle(harbor_server, TestCNAB.user_name, TestCNAB.user_push_cnab_password, "goharbor/harbor-log:v1.10.0", "kong:latest", target)
 
         #4. Get repository from Harbor successfully;
@@ -98,7 +98,10 @@ class TestCNAB(unittest.TestCase):
         #library.containerd.ctr_images_list(oci_ref = target)
 
         #5. Verfiy bundle name;
-        self.assertEqual(TestCNAB.cnab_bundle_data.name, TestCNAB.project_name + "/" + TestCNAB.cnab_repo_name)
+        self.assertEqual(
+            TestCNAB.cnab_bundle_data.name,
+            f"{TestCNAB.project_name}/{TestCNAB.cnab_repo_name}",
+        )
 
         #6. Get artifact by sha256;
         artifact = TestCNAB.artifact.get_reference_info(TestCNAB.project_name, TestCNAB.cnab_repo_name, TestCNAB.reference_sha256, **TestCNAB.USER_CLIENT)
@@ -144,5 +147,5 @@ if __name__ == '__main__':
     suite = unittest.TestSuite(unittest.makeSuite(TestCNAB))
     result = unittest.TextTestRunner(sys.stdout, verbosity=2, failfast=True).run(suite)
     if not result.wasSuccessful():
-        raise Exception(r"CNAB test failed: {}".format(result))
+        raise Exception(f"CNAB test failed: {result}")
 

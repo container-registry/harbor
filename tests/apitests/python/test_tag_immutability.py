@@ -40,7 +40,7 @@ class TestTagImmutability(unittest.TestCase):
             if tag.name == tag_name:
                 self.assertTrue(tag.immutable == status)
                 return
-        raise Exception("No tag {} found in artifact {}".format(tag, artifact))
+        raise Exception(f"No tag {tag} found in artifact {artifact}")
 
     def test_disability_of_rules(self):
         """
@@ -63,11 +63,17 @@ class TestTagImmutability(unittest.TestCase):
         push_special_image_to_project(project_name, harbor_server, self.user_name, self.user_password, image_a["name"], [image_a["tag1"], image_a["tag2"]])
 
         #3. Create a disabled rule matched image A;
-        rule_id = self.tag_immutability.create_rule(project_id, disabled = True, selector_repository=image_a["name"], selector_tag=str(image_a["tag1"])[0:2] + "*", **self.USER_CLIENT)
+        rule_id = self.tag_immutability.create_rule(
+            project_id,
+            disabled=True,
+            selector_repository=image_a["name"],
+            selector_tag=str(image_a["tag1"])[:2] + "*",
+            **self.USER_CLIENT
+        )
 
         #4. Both tags of image A should not be immutable;
         artifact_a = self.artifact.get_reference_info(project_name, image_a["name"], image_a["tag2"], **self.USER_CLIENT)
-        print("[test_disability_of_rules] - artifact:{}".format(artifact_a))
+        print(f"[test_disability_of_rules] - artifact:{artifact_a}")
         self.assertTrue(artifact_a)
         self.check_tag_immutability(artifact_a, image_a["tag1"], status = False)
         self.check_tag_immutability(artifact_a, image_a["tag2"], status = False)
@@ -77,7 +83,7 @@ class TestTagImmutability(unittest.TestCase):
 
         #6. image A with tag A should be immutable.
         artifact_a = self.artifact.get_reference_info(project_name, image_a["name"], image_a["tag2"], **self.USER_CLIENT)
-        print("[test_disability_of_rules] - artifact:{}".format(artifact_a))
+        print(f"[test_disability_of_rules] - artifact:{artifact_a}")
         self.assertTrue(artifact_a)
         self.check_tag_immutability(artifact_a, image_a["tag1"], status = True)
         self.check_tag_immutability(artifact_a, image_a["tag2"], status = False)
@@ -103,11 +109,16 @@ class TestTagImmutability(unittest.TestCase):
         push_special_image_to_project(project_name, harbor_server, self.user_name, self.user_password, image_a["name"], [image_a["tag1"], image_a["tag2"]])
 
         #3. Create a enabled rule matched image A with tag A;
-        self.tag_immutability.create_rule(project_id, selector_repository=image_a["name"], selector_tag=str(image_a["tag1"])[0:2] + "*", **self.USER_CLIENT)
+        self.tag_immutability.create_rule(
+            project_id,
+            selector_repository=image_a["name"],
+            selector_tag=str(image_a["tag1"])[:2] + "*",
+            **self.USER_CLIENT
+        )
 
         #4. Tag A should be immutable;
         artifact_a = self.artifact.get_reference_info(project_name, image_a["name"], image_a["tag2"], **self.USER_CLIENT)
-        print("[test_artifact_and_repo_is_undeletable] - artifact:{}".format(artifact_a))
+        print(f"[test_artifact_and_repo_is_undeletable] - artifact:{artifact_a}")
         self.assertTrue(artifact_a)
         self.check_tag_immutability(artifact_a, image_a["tag1"], status = True)
         self.check_tag_immutability(artifact_a, image_a["tag2"], status = False)
@@ -135,11 +146,16 @@ class TestTagImmutability(unittest.TestCase):
         push_special_image_to_project(self.project_name, harbor_server, self.user_name, self.user_password, image_a["name"], [image_a["tag1"], image_a["tag2"]])
 
         #2. Create a enabled rule matched image A with tag A;
-        self.tag_immutability.create_rule(self.project_id, selector_repository=image_a["name"], selector_tag=str(image_a["tag2"])[0:2] + "*", **self.USER_CLIENT)
+        self.tag_immutability.create_rule(
+            self.project_id,
+            selector_repository=image_a["name"],
+            selector_tag=str(image_a["tag2"])[:2] + "*",
+            **self.USER_CLIENT
+        )
 
         #3. Tag A should be immutable;
         artifact_a = self.artifact.get_reference_info(self.project_name, image_a["name"], image_a["tag2"], **self.USER_CLIENT)
-        print("[test_tag_is_undeletable] - artifact:{}".format(artifact_a))
+        print(f"[test_tag_is_undeletable] - artifact:{artifact_a}")
         self.assertTrue(artifact_a)
         self.check_tag_immutability(artifact_a, image_a["tag2"], status = True)
 
@@ -169,11 +185,16 @@ class TestTagImmutability(unittest.TestCase):
         push_special_image_to_project(project_name, harbor_server, self.user_name, self.user_password, image_a["name"], [image_a["tag1"], image_a["tag2"]])
 
         #3. Create a enabled rule matched image A with tag A;
-        self.tag_immutability.create_rule(project_id, selector_repository=image_a["name"], selector_tag=str(image_a["tag1"])[0:2] + "*", **self.USER_CLIENT)
+        self.tag_immutability.create_rule(
+            project_id,
+            selector_repository=image_a["name"],
+            selector_tag=str(image_a["tag1"])[:2] + "*",
+            **self.USER_CLIENT
+        )
 
         #4. Tag A should be immutable;
         artifact_a = self.artifact.get_reference_info(project_name, image_a["name"], image_a["tag2"], **self.USER_CLIENT)
-        print("[test_image_is_unpushable] - artifact:{}".format(artifact_a))
+        print(f"[test_image_is_unpushable] - artifact:{artifact_a}")
         self.assertTrue(artifact_a)
         self.check_tag_immutability(artifact_a, image_a["tag1"], status = True)
         self.check_tag_immutability(artifact_a, image_a["tag2"], status = False)
@@ -204,19 +225,31 @@ class TestTagImmutability(unittest.TestCase):
         push_special_image_to_project(project_name_src, harbor_server, self.user_name, self.user_password, image_a["name"], [image_a["tag1"], image_a["tag2"]])
 
         #3. Create a enabled rule matched image A with tag A;
-        self.tag_immutability.create_rule(project_id, selector_repository=image_a["name"], selector_tag=str(image_a["tag1"])[0:2] + "*", **self.USER_CLIENT)
+        self.tag_immutability.create_rule(
+            project_id,
+            selector_repository=image_a["name"],
+            selector_tag=str(image_a["tag1"])[:2] + "*",
+            **self.USER_CLIENT
+        )
 
         #4. Tag A should be immutable;
         artifact_a = self.artifact.get_reference_info(project_name, image_a["name"], image_a["tag2"], **self.USER_CLIENT)
-        print("[test_copy_disability] - artifact:{}".format(artifact_a))
+        print(f"[test_copy_disability] - artifact:{artifact_a}")
         self.assertTrue(artifact_a)
         self.check_tag_immutability(artifact_a, image_a["tag1"], status = True)
         self.check_tag_immutability(artifact_a, image_a["tag2"], status = False)
 
         #5. Can not copy artifact from project A to project B with the same repository name.
         artifact_a_src = self.artifact.get_reference_info(project_name_src, image_a["name"], image_a["tag2"], **self.USER_CLIENT)
-        print("[test_copy_disability] - artifact_a_src:{}".format(artifact_a_src))
-        self.artifact.copy_artifact(project_name, image_a["name"], project_name_src+"/"+ image_a["name"] + "@" + artifact_a_src.digest, expect_status_code=412, expect_response_body = "configured as immutable, cannot be updated", **self.USER_CLIENT)
+        print(f"[test_copy_disability] - artifact_a_src:{artifact_a_src}")
+        self.artifact.copy_artifact(
+            project_name,
+            image_a["name"],
+            f"{project_name_src}/" + image_a["name"] + "@" + artifact_a_src.digest,
+            expect_status_code=412,
+            expect_response_body="configured as immutable, cannot be updated",
+            **self.USER_CLIENT,
+        )
 
     #def test_replication_disability(self):
     #    pass
@@ -256,21 +289,21 @@ class TestTagImmutability(unittest.TestCase):
 
         #5. Tag2 should be immutable;
         artifact_a = self.artifact.get_reference_info(self.project_name, image_a["name"], image_a["tag2"], **self.USER_CLIENT)
-        print("[test_priority_of_rules] - artifact:{}".format(artifact_a))
+        print(f"[test_priority_of_rules] - artifact:{artifact_a}")
         self.assertTrue(artifact_a)
         self.check_tag_immutability(artifact_a, image_a["tag2"], status = True)
         self.check_tag_immutability(artifact_a, image_a["tag1"], status = False)
 
         #6. All tags in image B should be immutable;
         artifact_b = self.artifact.get_reference_info(self.project_name, image_b["name"], image_b["tag2"], **self.USER_CLIENT)
-        print("[test_priority_of_rules] - artifact:{}".format(artifact_b))
+        print(f"[test_priority_of_rules] - artifact:{artifact_b}")
         self.assertTrue(artifact_b)
         self.check_tag_immutability(artifact_b, image_b["tag2"], status = False)
         self.check_tag_immutability(artifact_b, image_b["tag1"], status = False)
 
         #7. All tags in image C should not be immutable;
         artifact_c = self.artifact.get_reference_info(self.project_name, image_c["name"], image_c["tag2"], **self.USER_CLIENT)
-        print("[test_priority_of_rules] - artifact:{}".format(artifact_c))
+        print(f"[test_priority_of_rules] - artifact:{artifact_c}")
         self.assertTrue(artifact_c)
         self.check_tag_immutability(artifact_c, image_c["tag2"], status = True)
         self.check_tag_immutability(artifact_c, image_c["tag1"], status = True)
@@ -295,5 +328,5 @@ if __name__ == '__main__':
     suite = unittest.TestSuite(unittest.makeSuite(TestTagImmutability))
     result = unittest.TextTestRunner(sys.stdout, verbosity=2, failfast=True).run(suite)
     if not result.wasSuccessful():
-        raise Exception(r"Tag immutability test failed: {}".format(result))
+        raise Exception(f"Tag immutability test failed: {result}")
 

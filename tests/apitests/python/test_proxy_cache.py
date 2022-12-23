@@ -88,28 +88,62 @@ class TestProxyCache(unittest.TestCase):
         self.project.add_project_members(project_id, user_id=user_id, **ADMIN_CLIENT)
 
         #4. Pull image from this project by docker CLI;
-        pull_harbor_image(harbor_server, USER_CLIENT["username"], USER_CLIENT["password"], project_name + "/" +  user_namespace + "/" + image_for_docker["image"], image_for_docker["tag"])
+        pull_harbor_image(
+            harbor_server,
+            USER_CLIENT["username"],
+            USER_CLIENT["password"],
+            f"{project_name}/{user_namespace}/" + image_for_docker["image"],
+            image_for_docker["tag"],
+        )
 
         #5. Pull image from this project by ctr CLI;
-        oci_ref = harbor_server + "/" + project_name + "/" + user_namespace + "/" + image_for_ctr["image"] + ":" + image_for_ctr["tag"]
+        oci_ref = (
+            f"{harbor_server}/{project_name}/{user_namespace}/"
+            + image_for_ctr["image"]
+            + ":"
+            + image_for_ctr["tag"]
+        )
         library.containerd.ctr_images_pull(user_name, self.user_password, oci_ref)
         library.containerd.ctr_images_list(oci_ref = oci_ref)
 
         #6. Pull manifest index from this project by docker CLI;
-        index_repo_name =  user_namespace + "/" + index_for_docker["image"]
-        pull_harbor_image(harbor_server, user_name, self.user_password, project_name + "/" + index_repo_name, index_for_docker["tag"])
+        index_repo_name = f"{user_namespace}/" + index_for_docker["image"]
+        pull_harbor_image(
+            harbor_server,
+            user_name,
+            self.user_password,
+            f"{project_name}/{index_repo_name}",
+            index_for_docker["tag"],
+        )
 
         #7. Pull manifest from this project by ctr CLI;
-        index_repo_name_for_ctr =  user_namespace + "/" + index_for_ctr["image"]
-        oci_ref = harbor_server + "/" + project_name + "/" + index_repo_name_for_ctr + ":" + index_for_ctr["tag"]
+        index_repo_name_for_ctr = f"{user_namespace}/" + index_for_ctr["image"]
+        oci_ref = (
+            f"{harbor_server}/{project_name}/{index_repo_name_for_ctr}:"
+            + index_for_ctr["tag"]
+        )
         library.containerd.ctr_images_pull(user_name, self.user_password, oci_ref)
         library.containerd.ctr_images_list(oci_ref = oci_ref)
 
         #8. Image pulled by docker CLI should be cached;
-        self.artifact.waiting_for_reference_exist(project_name, urllib.parse.quote(user_namespace + "/" + image_for_docker["image"],'utf-8'), image_for_docker["tag"], **USER_CLIENT)
+        self.artifact.waiting_for_reference_exist(
+            project_name,
+            urllib.parse.quote(
+                f"{user_namespace}/" + image_for_docker["image"], 'utf-8'
+            ),
+            image_for_docker["tag"],
+            **USER_CLIENT,
+        )
 
         #9. Image pulled by ctr CLI should be cached;
-        self.artifact.waiting_for_reference_exist(project_name, urllib.parse.quote(user_namespace + "/" + image_for_ctr["image"],'utf-8'), image_for_ctr["tag"], **USER_CLIENT)
+        self.artifact.waiting_for_reference_exist(
+            project_name,
+            urllib.parse.quote(
+                f"{user_namespace}/" + image_for_ctr["image"], 'utf-8'
+            ),
+            image_for_ctr["tag"],
+            **USER_CLIENT,
+        )
 
         #10. Manifest index pulled by docker CLI should be cached;
         ret_index_by_d = self.artifact.waiting_for_reference_exist(project_name, urllib.parse.quote(index_repo_name,'utf-8'), index_for_docker["tag"], **USER_CLIENT)

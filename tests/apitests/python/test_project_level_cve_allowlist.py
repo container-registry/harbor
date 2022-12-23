@@ -39,7 +39,7 @@ class TestProjectCVEAllowlist(unittest.TestCase):
         user_ra_password = "Aa123456"
         print("Setup: Creating user for test")
         user_ra_id, user_ra_name = self.user.create_user(user_password=user_ra_password, **ADMIN_CLIENT)
-        print("Created user: %s, id: %s" % (user_ra_name, user_ra_id))
+        print(f"Created user: {user_ra_name}, id: {user_ra_id}")
         self.USER_RA_CLIENT = dict(endpoint=ADMIN_CLIENT["endpoint"],
                                    username=user_ra_name,
                                    password=user_ra_password)

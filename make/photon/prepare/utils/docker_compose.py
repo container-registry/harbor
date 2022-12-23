@@ -53,14 +53,10 @@ def prepare_docker_compose(configs, with_trivy, with_notary, with_chartmuseum):
     if uaa_config.get('ca_file'):
         rendering_variables['uaa_ca_file'] = uaa_config['ca_file']
 
-    # for log
-    log_ep_host = configs.get('log_ep_host')
-    if log_ep_host:
+    if log_ep_host := configs.get('log_ep_host'):
         rendering_variables['external_log_endpoint'] = True
 
-    # for metrics
-    metric = configs.get('metric')
-    if metric:
+    if metric := configs.get('metric'):
         rendering_variables['metric'] = metric
 
     render_jinja(docker_compose_template_path, docker_compose_yml_path,  mode=0o644, **rendering_variables)

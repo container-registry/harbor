@@ -19,7 +19,7 @@ def migrate(input_, output, target):
     :target: is the the target version of config file will upgrade to
     """
     if target not in accept_versions:
-        click.echo('target version {} not supported'.format(target))
+        click.echo(f'target version {target} not supported')
         sys.exit(-1)
 
     if not output:
@@ -30,20 +30,24 @@ def migrate(input_, output, target):
     configs = read_conf(input_path)
     input_version = configs.get('_version')
     if version.parse(input_version) < version.parse('1.9.0'):
-        click.echo('the version {} not supported, make sure the version in input file above 1.8.0'.format(input_version))
+        click.echo(
+            f'the version {input_version} not supported, make sure the version in input file above 1.8.0'
+        )
         sys.exit(-1)
     if input_version == target:
-        click.echo("Version of input harbor.yml is identical to target {}, no need to upgrade".format(input_version))
+        click.echo(
+            f"Version of input harbor.yml is identical to target {input_version}, no need to upgrade"
+        )
         sys.exit(0)
 
     current_input_path = input_path
     for m in search(input_version, target):
-        current_output_path = "harbor.yml.{}.tmp".format(m.revision)
-        click.echo("migrating to version {}".format(m.revision))
+        current_output_path = f"harbor.yml.{m.revision}.tmp"
+        click.echo(f"migrating to version {m.revision}")
         m.migrate(current_input_path, current_output_path)
         current_input_path = current_output_path
     shutil.copy(current_input_path, output_path)
-    click.echo("Written new values to {}".format(output))
+    click.echo(f"Written new values to {output}")
     for tmp_f in glob.glob("harbor.yml.*.tmp"):
         os.remove(tmp_f)
 

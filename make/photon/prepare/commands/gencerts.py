@@ -24,7 +24,7 @@ def gencert(path, days):
 
     click.echo("start generate internal tls certs")
     if not os.path.exists(path):
-        click.echo('path {} not exist, create it...'.format(path))
+        click.echo(f'path {path} not exist, create it...')
         os.makedirs(path, exist_ok=True)
     with Popen([gen_tls_script, days], stdout=PIPE, stderr=STDOUT, cwd=path) as p:
         for line in p.stdout:

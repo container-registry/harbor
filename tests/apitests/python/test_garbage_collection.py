@@ -107,7 +107,10 @@ class TestProjects(unittest.TestCase):
         #11. Repository with untag image should be still there;
         repo_data_untag = self.repo.list_repositories(TestProjects.project_gc_untag_name, **TestProjects.USER_GC_CLIENT)
         _assert_status_code(len(repo_data_untag), 1)
-        self.assertEqual(TestProjects.project_gc_untag_name + "/" + self.repo_name_untag , repo_data_untag[0].name)
+        self.assertEqual(
+            f"{TestProjects.project_gc_untag_name}/{self.repo_name_untag}",
+            repo_data_untag[0].name,
+        )
 
         #12. But no any artifact in repository anymore.
         artifacts = self.artifact.list_artifacts(TestProjects.project_gc_untag_name, self.repo_name_untag, **TestProjects.USER_GC_CLIENT)

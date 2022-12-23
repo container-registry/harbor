@@ -88,4 +88,4 @@ if __name__ == '__main__':
     suite = unittest.TestSuite(unittest.makeSuite(TestStopScan))
     result = unittest.TextTestRunner(sys.stdout, verbosity=2, failfast=True).run(suite)
     if not result.wasSuccessful():
-        raise Exception(r"Stop Scan test failed: {}".format(result))
+        raise Exception(f"Stop Scan test failed: {result}")

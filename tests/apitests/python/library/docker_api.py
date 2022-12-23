@@ -70,25 +70,71 @@ def docker_manifest_push_to_harbor(index, manifests, harbor_server, username, pa
 
 def list_repositories(harbor_host, username, password, n = None, last = None):
     if n is not None and last is not None:
-        command = ["curl", "-s", "-u", username+":"+password, "https://"+harbor_host+"/v2/_catalog"+"?n=%d"%n+"&last="+last, "--insecure"]
+        command = [
+            "curl",
+            "-s",
+            "-u",
+            f"{username}:{password}",
+            f"https://{harbor_host}/v2/_catalog"
+            + "?n=%d" % n
+            + "&last="
+            + last,
+            "--insecure",
+        ]
     elif n is not None:
-            command = ["curl", "-s", "-u", username+":"+password, "https://"+harbor_host+"/v2/_catalog"+"?n=%d"%n, "--insecure"]
+        command = [
+            "curl",
+            "-s",
+            "-u",
+            f"{username}:{password}",
+            f"https://{harbor_host}/v2/_catalog" + "?n=%d" % n,
+            "--insecure",
+        ]
     else:
-        command = ["curl", "-s", "-u", username+":"+password, "https://"+harbor_host+"/v2/_catalog", "--insecure"]
+        command = [
+            "curl",
+            "-s",
+            "-u",
+            f"{username}:{password}",
+            f"https://{harbor_host}/v2/_catalog",
+            "--insecure",
+        ]
     ret = base.run_command(command)
-    repos = json.loads(ret).get("repositories","")
-    return repos
+    return json.loads(ret).get("repositories","")
 
 def list_image_tags(harbor_host, repository, username, password, n = None, last = None):
     if n is not None and last is not None:
-        command = ["curl", "-s", "-u", username+":"+password, "https://"+harbor_host+"/v2/"+repository+"/tags/list"+"?n=%d"%n+"&last="+last, "--insecure"]
+        command = [
+            "curl",
+            "-s",
+            "-u",
+            f"{username}:{password}",
+            f"https://{harbor_host}/v2/{repository}/tags/list"
+            + "?n=%d" % n
+            + "&last="
+            + last,
+            "--insecure",
+        ]
     elif n is not None:
-        command = ["curl", "-s", "-u", username+":"+password, "https://"+harbor_host+"/v2/"+repository+"/tags/list"+"?n=%d"%n, "--insecure"]
+        command = [
+            "curl",
+            "-s",
+            "-u",
+            f"{username}:{password}",
+            f"https://{harbor_host}/v2/{repository}/tags/list" + "?n=%d" % n,
+            "--insecure",
+        ]
     else:
-        command = ["curl", "-s", "-u", username+":"+password, "https://"+harbor_host+"/v2/"+repository+"/tags/list", "--insecure"]
+        command = [
+            "curl",
+            "-s",
+            "-u",
+            f"{username}:{password}",
+            f"https://{harbor_host}/v2/{repository}/tags/list",
+            "--insecure",
+        ]
     ret = base.run_command(command)
-    tags = json.loads(ret).get("tags","")
-    return tags
+    return json.loads(ret).get("tags","")
 
 class DockerAPI(object):
     def __init__(self):
@@ -116,43 +162,43 @@ class DockerAPI(object):
             print("Docker image login did not catch exception")
             err_message = ret
         finally:
-            if expected_error_message is not None:
-                if str(err_message).lower().find(expected_error_message.lower()) < 0:
-                    raise Exception(r" err message is different from expected error message")
-                else:
-                    print(r"Docker image login got expected error message")
-            else:
-                if str(err_message).lower().find("error".lower()) >= 0:
+            if expected_error_message is None:
+                if "error".lower() in str(err_message).lower():
                     raise Exception(r" It's was not suppose to catch error when login registry")
+
+            elif str(err_message).lower().find(expected_error_message.lower()) < 0:
+                raise Exception(r" err message is different from expected error message")
+            else:
+                print(r"Docker image login got expected error message")
 
     def docker_image_pull(self, image, tag = None, expected_error_message = None, is_clean_all_img = True):
         ret = ""
         err_message = ""
-        if tag is not None:
-            _tag = tag
-        else:
-            _tag = "latest"
+        _tag = tag if tag is not None else "latest"
         if expected_error_message == "":
             expected_error_message = None
         try:
-            ret = self.DCLIENT.pull(r'{}:{}'.format(image, _tag))
+            ret = self.DCLIENT.pull(f'{image}:{_tag}')
         except Exception as err:
-            print( "Docker image pull catch exception:", str(err))
+            print("Docker image pull catch exception:", err)
             err_message = str(err)
             if expected_error_message is None:
-                raise Exception(r" Docker pull image {} failed, error is [{}]".format (image, str(err)))
+                raise Exception(f" Docker pull image {image} failed, error is [{str(err)}]")
         else:
             print("Docker image pull did not catch exception and return message is:", ret)
             err_message = ret
         finally:
-            if expected_error_message is not None:
-                if str(err_message).lower().find(expected_error_message.lower()) < 0:
-                    raise Exception(r" Failed to catch error [{}] when pull image {}, return message: {}".format (expected_error_message, image, err_message))
-                else:
-                    print(r"Docker image pull got expected error message:{}".format(expected_error_message))
+            if expected_error_message is None:
+                if "error".lower() in str(err_message).lower():
+                    raise Exception(
+                        f" It's was not suppose to catch error when pull image {image}, return message is [{err_message}]"
+                    )
+            elif str(err_message).lower().find(expected_error_message.lower()) < 0:
+                raise Exception(
+                    f" Failed to catch error [{expected_error_message}] when pull image {image}, return message: {err_message}"
+                )
             else:
-                if str(err_message).lower().find("error".lower()) >= 0:
-                    raise Exception(r" It's was not suppose to catch error when pull image {}, return message is [{}]".format (image, err_message))
+                print(f"Docker image pull got expected error message:{expected_error_message}")
             if is_clean_all_img:
                 docker_image_clean_all()
 
@@ -166,7 +212,7 @@ class DockerAPI(object):
             print("Docker image tag commond return:", ret)
             return harbor_registry, _tag
         except docker.errors.APIError as err:
-            raise Exception(r" Docker tag image {} failed, error is [{}]".format (image, str(err)))
+            raise Exception(f" Docker tag image {image} failed, error is [{str(err)}]")
 
     def docker_image_push(self, harbor_registry, tag, expected_error_message = None):
         ret = ""
@@ -177,22 +223,25 @@ class DockerAPI(object):
         try:
             ret = self.DCLIENT.push(harbor_registry, tag)
         except Exception as err:
-            print( "Docker image push catch exception:", str(err))
+            print("Docker image push catch exception:", err)
             err_message = str(err)
             if expected_error_message is None:
-                raise Exception(r" Docker push image {} failed, error is [{}]".format (image, str(err)))
+                raise Exception(f" Docker push image {image} failed, error is [{str(err)}]")
         else:
             print("Docker image push did not catch exception and return message is:", ret)
             err_message = ret
         finally:
-            if expected_error_message is not None:
-                if str(err_message).lower().find(expected_error_message.lower()) < 0:
-                    raise Exception(r" Failed to catch error [{}] when push image {}, return message: {}".format (expected_error_message, harbor_registry, err_message))
-                else:
-                    print(r"Docker image push got expected error message:{}".format(expected_error_message))
+            if expected_error_message is None:
+                if "error".lower() in str(err_message).lower():
+                    raise Exception(
+                        f" It's was not suppose to catch error when push image {harbor_registry}, return message is [{err_message}]"
+                    )
+            elif str(err_message).lower().find(expected_error_message.lower()) < 0:
+                raise Exception(
+                    f" Failed to catch error [{expected_error_message}] when push image {harbor_registry}, return message: {err_message}"
+                )
             else:
-                if str(err_message).lower().find("error".lower()) >= 0:
-                    raise Exception(r" It's was not suppose to catch error when push image {}, return message is [{}]".format (harbor_registry, err_message))
+                print(f"Docker image push got expected error message:{expected_error_message}")
         docker_images_all_list()
 
     def docker_image_build(self, harbor_registry, tags=None, size=1, expected_error_message = None, clean_images=True):
@@ -202,43 +251,52 @@ class DockerAPI(object):
         try:
             baseimage = BASE_IMAGE['name'] + ":" + BASE_IMAGE['tag']
             if not self.DCLIENT.images(name=baseimage):
-                print( "Docker load is triggered when building {}".format(harbor_registry))
+                print(f"Docker load is triggered when building {harbor_registry}")
                 docker_load_image(BASE_IMAGE_ABS_PATH_NAME)
                 docker_images_all_list()
-            c = self.DCLIENT.create_container(image=baseimage,
-                command='dd if=/dev/urandom of=test bs=1M count={}'.format(size))
+            c = self.DCLIENT.create_container(
+                image=baseimage,
+                command=f'dd if=/dev/urandom of=test bs=1M count={size}',
+            )
             self.DCLIENT.start(c)
             self.DCLIENT.wait(c)
             if not tags:
                 tags=['latest']
-            firstrepo="{}:{}".format(harbor_registry, tags[0])
+            firstrepo = f"{harbor_registry}:{tags[0]}"
             #self.DCLIENT.commit(c, firstrepo)
             self.DCLIENT2.containers.get(c).commit(harbor_registry, tags[0])
             for tag in tags[1:]:
-                repo="{}:{}".format(harbor_registry, tag)
+                repo = f"{harbor_registry}:{tag}"
                 self.DCLIENT.tag(firstrepo, repo)
             for tag in tags:
-                repo="{}:{}".format(harbor_registry, tag)
+                repo = f"{harbor_registry}:{tag}"
                 ret = self.DCLIENT.push(repo)
                 print("docker_image_push ret:", ret)
-                print("build image {} with size {}".format(repo, size))
+                print(f"build image {repo} with size {size}")
             self.DCLIENT.remove_container(c)
         except Exception as err:
-            print( "Docker image build catch exception:", str(err))
+            print("Docker image build catch exception:", err)
             err_message = str(err)
             if expected_error_message is None:
-                raise Exception(r" Docker push image {} failed, error is [{}]".format (harbor_registry, str(err)))
+                raise Exception(
+                    f" Docker push image {harbor_registry} failed, error is [{str(err)}]"
+                )
         else:
             print("Docker image build did not catch exception and return message is:", ret)
             err_message = ret
         finally:
-            if expected_error_message is not None:
-                if str(err_message).lower().find(expected_error_message.lower()) < 0:
-                    raise Exception(r" Failed to catch error [{}] when build image {}, return message: {}".format (expected_error_message, harbor_registry, err_message))
-                else:
-                    print(r"Docker image build got expected error message: {}".format(expected_error_message))
+            if expected_error_message is None:
+                if "error".lower() in str(err_message).lower():
+                    raise Exception(
+                        f" It's was not suppose to catch error when build image {harbor_registry}, return message is [{err_message}]"
+                    )
+            elif str(err_message).lower().find(expected_error_message.lower()) < 0:
+                raise Exception(
+                    f" Failed to catch error [{expected_error_message}] when build image {harbor_registry}, return message: {err_message}"
+                )
             else:
-                if str(err_message).lower().find("error".lower()) >= 0:
-                    raise Exception(r" It's was not suppose to catch error when build image {}, return message is [{}]".format (harbor_registry, err_message))
+                print(
+                    f"Docker image build got expected error message: {expected_error_message}"
+                )
             if clean_images:
                 docker_image_clean_all()

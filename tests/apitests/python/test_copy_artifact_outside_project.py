@@ -91,15 +91,28 @@ class TestProjects(unittest.TestCase):
 
         #7. Get repository(RA)'s image tag detail information;
         src_tag_data = self.artifact.get_reference_info(TestProjects.project_src_repo_name, TestProjects.src_repo_name.split('/')[1], tag_name, **TestProjects.USER_RETAG_CLIENT)
-        TestProjects.dst_repo_name = TestProjects.project_dst_repo_name+"/"+ dst_repo_sub_name
+        TestProjects.dst_repo_name = (
+            f"{TestProjects.project_dst_repo_name}/{dst_repo_sub_name}"
+        )
         #8. Retag image in project(PA) to project(PB), it should be forbidden;
-        self.artifact.copy_artifact(TestProjects.project_dst_repo_name, dst_repo_sub_name, TestProjects.src_repo_name+"@"+src_tag_data.digest, expect_status_code=403, **TestProjects.USER_RETAG_CLIENT)
+        self.artifact.copy_artifact(
+            TestProjects.project_dst_repo_name,
+            dst_repo_sub_name,
+            f"{TestProjects.src_repo_name}@{src_tag_data.digest}",
+            expect_status_code=403,
+            **TestProjects.USER_RETAG_CLIENT,
+        )
 
         #9. Update role of user-retag as admin member of project(PB);
         self.project.update_project_member_role(TestProjects.project_dst_repo_id, retag_member_id, 1, **ADMIN_CLIENT)
 
         #10. Retag image in project(PA) to project(PB), it should be successful;
-        self.artifact.copy_artifact(TestProjects.project_dst_repo_name, dst_repo_sub_name, TestProjects.src_repo_name+"@"+src_tag_data.digest, **TestProjects.USER_RETAG_CLIENT)
+        self.artifact.copy_artifact(
+            TestProjects.project_dst_repo_name,
+            dst_repo_sub_name,
+            f"{TestProjects.src_repo_name}@{src_tag_data.digest}",
+            **TestProjects.USER_RETAG_CLIENT,
+        )
 
         #11. Get repository(RB)'s image tag detail information;
         dst_tag_data = self.artifact.get_reference_info(TestProjects.project_dst_repo_name, dst_repo_sub_name, tag_name, **TestProjects.USER_RETAG_CLIENT)

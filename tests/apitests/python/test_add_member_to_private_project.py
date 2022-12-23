@@ -33,23 +33,39 @@ class TestProjects(unittest.TestCase):
 
         #1. Create user-001
         user_001_id, user_001_name = self.user.create_user(user_password = user_001_password, **ADMIN_CLIENT)
-        self.assertNotEqual(user_001_id, None, msg="Failed to create user, return user is {}".format(user_001_id))
+        self.assertNotEqual(
+            user_001_id,
+            None,
+            msg=f"Failed to create user, return user is {user_001_id}",
+        )
 
         USER_001_CLIENT=dict(endpoint = url, username = user_001_name, password = user_001_password)
 
         #2. Create private project-001
         project_001_id, project_001_name = self.project.create_project(metadata = {"public": "false"}, **ADMIN_CLIENT)
-        self.assertNotEqual(project_001_name, None, msg="Project was created failed, return project name is  {} and  id is {}.".format(project_001_name, project_001_id))
+        self.assertNotEqual(
+            project_001_name,
+            None,
+            msg=f"Project was created failed, return project name is  {project_001_name} and  id is {project_001_id}.",
+        )
 
         #3.1 Get private projects of user-001
         project_001_data = self.project.get_projects(dict(public=False), **USER_001_CLIENT)
 
         #3.2 Check user-001 has no any private project
-        self.assertEqual(len(project_001_data), 0, msg="user-001 should has no any private project, but we got {}".format(project_001_data))
+        self.assertEqual(
+            len(project_001_data),
+            0,
+            msg=f"user-001 should has no any private project, but we got {project_001_data}",
+        )
 
         #4. Add user-001 as a member of project-001
         result = self.project.add_project_members(project_001_id, user_id=user_001_id, **ADMIN_CLIENT)
-        self.assertNotEqual(result, False, msg="Failed to add member user_001 to project_001, result is {}".format(result))
+        self.assertNotEqual(
+            result,
+            False,
+            msg=f"Failed to add member user_001 to project_001, result is {result}",
+        )
 
 
         #5 Get private project of uesr-001, uesr-001 can see only one private project which is project-001

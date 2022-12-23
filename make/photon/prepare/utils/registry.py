@@ -57,17 +57,18 @@ def parse_redis(redis_url):
             'redis_db_index_reg': len(u.path.split('/')) == 3 and int(u.path.split('/')[2]) or 0,
         }
     else:
-        raise Exception('bad redis url for registry:' + redis_url)
+        raise Exception(f'bad redis url for registry:{redis_url}')
 
 def get_storage_provider_info(provider_name, provider_config):
     provider_config_copy = copy.deepcopy(provider_config)
-    if provider_name == "filesystem":
-        if not (provider_config_copy and ('rootdirectory' in provider_config_copy)):
-            provider_config_copy['rootdirectory'] = '/storage'
+    if provider_name == "filesystem" and not (
+        provider_config_copy and ('rootdirectory' in provider_config_copy)
+    ):
+        provider_config_copy['rootdirectory'] = '/storage'
     if provider_name == 'gcs' and provider_config_copy.get('keyfile'):
         provider_config_copy['keyfile'] = '/etc/registry/gcs.key'
     # generate storage configuration section in yaml format
-    storage_provider_conf_list = [provider_name + ':']
+    storage_provider_conf_list = [f'{provider_name}:']
     for config in provider_config_copy.items():
         if config[1] is None:
             value = ''
@@ -75,9 +76,8 @@ def get_storage_provider_info(provider_name, provider_config):
             value = 'true'
         else:
             value = config[1]
-        storage_provider_conf_list.append('{}: {}'.format(config[0], value))
-    storage_provider_info = ('\n' + ' ' * 4).join(storage_provider_conf_list)
-    return storage_provider_info
+        storage_provider_conf_list.append(f'{config[0]}: {value}')
+    return ('\n' + ' ' * 4).join(storage_provider_conf_list)
 
 def gen_passwd_file(config_dict):
     return subprocess.call(["/usr/bin/htpasswd", "-bcB", registry_passwd_path, config_dict['registry_username'],
