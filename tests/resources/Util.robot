@@ -40,8 +40,6 @@ Resource  Harbor-Pages/Project-Artifact.robot
 Resource  Harbor-Pages/Project-Artifact-Elements.robot
 Resource  Harbor-Pages/Project-Config.robot
 Resource  Harbor-Pages/Project-Config-Elements.robot
-Resource  Harbor-Pages/Project-Helmcharts.robot
-Resource  Harbor-Pages/Project-Helmcharts_Elements.robot
 Resource  Harbor-Pages/Project-Copy.robot
 Resource  Harbor-Pages/Project-Copy-Elements.robot
 Resource  Harbor-Pages/Project-Tag-Retention.robot
@@ -71,6 +69,8 @@ Resource  Harbor-Pages/Logs.robot
 Resource  Harbor-Pages/Logs_Elements.robot
 Resource  Harbor-Pages/Log_Rotation.robot
 Resource  Harbor-Pages/Log_Rotation_Elements.robot
+Resource  Harbor-Pages/Job_Service_Dashboard.robot
+Resource  Harbor-Pages/Job_Service_Dashboard_Elements.robot
 Resource  Harbor-Pages/Verify.robot
 Resource  Docker-Util.robot
 Resource  CNAB_Util.robot
@@ -143,16 +143,6 @@ Retry Clear Element Text
     [Arguments]  ${element_xpath}
     @{param}  Create List  ${element_xpath}
     Retry Action Keyword  Clear Element Text  @{param}
-
-Retry Clear Element Text By Press Keys
-    [Arguments]  ${element_xpath}
-    ${value}=  Get Value  ${element_xpath}
-    ${value_length}=  Get length  ${value}
-    ${keys}=  Create List
-    FOR  ${idx}  IN RANGE  ${value_length}
-        Append To List  ${keys}  BACK_SPACE
-    END
-    Press Keys  ${element_xpath}  @{keys}
 
 Retry Link Click
     [Arguments]  ${element_xpath}
@@ -310,11 +300,9 @@ Retry File Should Not Exist
 
 Run Curl And Return Json
     [Arguments]  ${curl_cmd}
-    ${json_data_file}=  Set Variable  ${CURDIR}${/}cur_user_info.json
     ${rc}  ${output}=  Run And Return Rc And Output  ${curl_cmd}
     Should Be Equal As Integers  0  ${rc}
-    Create File  ${json_data_file}  ${output}
-    ${json}=    Load Json From File    ${json_data_file}
+    ${json}=  Convert String To Json  ${output}
     [Return]  ${json}
 
 Log All
@@ -324,7 +312,7 @@ Log All
 
 New Tab
     Execute Javascript  window.open('')
-    Select Window  title=undefined
+    Switch Window  title=undefined
 
 Click Link New Tab And Switch
     [Arguments]  ${element_xpath}

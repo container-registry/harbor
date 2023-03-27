@@ -31,7 +31,6 @@ import (
 	taskCtl "github.com/goharbor/harbor/src/controller/task"
 	"github.com/goharbor/harbor/src/jobservice/job"
 	"github.com/goharbor/harbor/src/lib/errors"
-	liberrors "github.com/goharbor/harbor/src/lib/errors"
 	"github.com/goharbor/harbor/src/lib/q"
 	"github.com/goharbor/harbor/src/pkg/p2p/preheat/models/policy"
 	instanceModel "github.com/goharbor/harbor/src/pkg/p2p/preheat/models/provider"
@@ -334,7 +333,7 @@ func (api *preheatAPI) DeletePolicy(ctx context.Context, params operation.Delete
 		return nil
 	}
 	executions, err := api.executionCtl.List(ctx, &q.Query{Keywords: map[string]interface{}{
-		"vendor_type": job.P2PPreheat,
+		"vendor_type": job.P2PPreheatVendorType,
 		"vendor_id":   policy.ID,
 	}})
 	if err != nil {
@@ -343,7 +342,7 @@ func (api *preheatAPI) DeletePolicy(ctx context.Context, params operation.Delete
 
 	// Detecting running tasks under the policy
 	if err = detectRunningExecutions(executions); err != nil {
-		return api.SendError(ctx, liberrors.New(err).WithCode(liberrors.PreconditionCode))
+		return api.SendError(ctx, errors.New(err).WithCode(errors.PreconditionCode))
 	}
 
 	err = api.preheatCtl.DeletePolicy(ctx, policy.ID)
@@ -442,7 +441,7 @@ func (api *preheatAPI) PingInstances(ctx context.Context, params operation.PingI
 	if params.Instance.ID > 0 {
 		// by ID
 		instance, err = api.preheatCtl.GetInstance(ctx, params.Instance.ID)
-		if liberrors.IsNotFoundErr(err) {
+		if errors.IsNotFoundErr(err) {
 			return operation.NewPingInstancesNotFound()
 		}
 		if err != nil {
@@ -655,7 +654,7 @@ func (api *preheatAPI) ListExecutions(ctx context.Context, params operation.List
 	}
 
 	if query != nil {
-		query.Keywords["vendor_type"] = job.P2PPreheat
+		query.Keywords["vendor_type"] = job.P2PPreheatVendorType
 		query.Keywords["vendor_id"] = policy.ID
 	}
 
@@ -823,7 +822,7 @@ func (api *preheatAPI) requireExecutionInProject(ctx context.Context, projectNam
 		return err
 	}
 
-	if exec != nil && exec.VendorType == job.P2PPreheat && exec.VendorID == plc.ID {
+	if exec != nil && exec.VendorType == job.P2PPreheatVendorType && exec.VendorID == plc.ID {
 		return nil
 	}
 

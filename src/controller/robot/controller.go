@@ -152,7 +152,7 @@ func (d *controller) Update(ctx context.Context, r *Robot, option *Option) error
 	}
 	// update the permission
 	if option != nil && option.WithPermission {
-		if err := d.rbacMgr.DeletePermissionsByRole(ctx, ROBOTTYPE, r.ID); err != nil {
+		if err := d.rbacMgr.DeletePermissionsByRole(ctx, ROBOTTYPE, r.ID); err != nil && !errors.IsNotFoundErr(err) {
 			return err
 		}
 		if err := d.createPermission(ctx, r); err != nil {
@@ -395,12 +395,12 @@ func CreateSec(salt ...string) (string, string, string, error) {
 	return secret, pwd, saltTmp, nil
 }
 
+var (
+	hasLower  = regexp.MustCompile(`[a-z]`)
+	hasUpper  = regexp.MustCompile(`[A-Z]`)
+	hasNumber = regexp.MustCompile(`\d`)
+)
+
 func IsValidSec(secret string) bool {
-	hasLower := regexp.MustCompile(`[a-z]`)
-	hasUpper := regexp.MustCompile(`[A-Z]`)
-	hasNumber := regexp.MustCompile(`\d`)
-	if len(secret) >= 8 && hasLower.MatchString(secret) && hasUpper.MatchString(secret) && hasNumber.MatchString(secret) {
-		return true
-	}
-	return false
+	return len(secret) >= 8 && hasLower.MatchString(secret) && hasUpper.MatchString(secret) && hasNumber.MatchString(secret)
 }

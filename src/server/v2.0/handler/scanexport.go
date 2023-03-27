@@ -54,8 +54,10 @@ func (se *scanDataExportAPI) ExportScanData(ctx context.Context, params operatio
 		return se.SendError(ctx, err)
 	}
 
-	if err := se.RequireProjectAccess(ctx, params.Criteria.Projects[0], rbac.ActionCreate, rbac.ResourceExportCVE); err != nil {
-		return se.SendError(ctx, err)
+	for _, pid := range params.Criteria.Projects {
+		if err := se.RequireProjectAccess(ctx, pid, rbac.ActionCreate, rbac.ResourceExportCVE); err != nil {
+			return se.SendError(ctx, err)
+		}
 	}
 
 	scanDataExportJob := new(models.ScanDataExportJob)
@@ -160,13 +162,6 @@ func (se *scanDataExportAPI) DownloadScanData(ctx context.Context, params operat
 		return se.SendError(ctx, err)
 	}
 
-	// check if the CSV artifact for the execution exists
-	if !execution.FilePresent {
-		return middleware.ResponderFunc(func(writer http.ResponseWriter, producer runtime.Producer) {
-			writer.WriteHeader(http.StatusNotFound)
-		})
-	}
-
 	// check if the execution being downloaded is owned by the current user
 	secContext, err := se.GetSecurityContext(ctx)
 	if err != nil {
@@ -176,6 +171,13 @@ func (se *scanDataExportAPI) DownloadScanData(ctx context.Context, params operat
 	if secContext.GetUsername() != execution.UserName {
 		return middleware.ResponderFunc(func(writer http.ResponseWriter, producer runtime.Producer) {
 			writer.WriteHeader(http.StatusForbidden)
+		})
+	}
+
+	// check if the CSV artifact for the execution exists
+	if !execution.FilePresent {
+		return middleware.ResponderFunc(func(writer http.ResponseWriter, producer runtime.Producer) {
+			writer.WriteHeader(http.StatusNotFound)
 		})
 	}
 
@@ -309,11 +311,11 @@ func (se *scanDataExportAPI) requireProjectsAccess(ctx context.Context, pids []i
 // validateScanExportParams validates scan data export request parameters by
 // following policies.
 // rules:
-//   1. check the scan data type
-//   2. the criteria should not be empty
-//   3. currently only the export of single project is open
-//   4. check the existence of project
-//   5. do not allow to input space in the repo/tag/cve_id (space will lead to misjudge for doublestar filter)
+//  1. check the scan data type
+//  2. the criteria should not be empty
+//  3. currently only the export of single project is open
+//  4. check the existence of project
+//  5. do not allow to input space in the repo/tag/cve_id (space will lead to misjudge for doublestar filter)
 func (se *scanDataExportAPI) validateScanExportParams(ctx context.Context, params operation.ExportScanDataParams) error {
 	// check if the MIME type for the export is the Generic vulnerability data
 	if params.XScanDataType != v1.MimeTypeGenericVulnerabilityReport {

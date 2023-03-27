@@ -42,9 +42,8 @@ func TestConfig(t *testing.T) {
 	dao.PrepareTestData([]string{"delete from properties where k='scan_all_policy'"}, []string{})
 	defaultCACertPath = path.Join(currPath(), "test", "ca.crt")
 	c := map[string]interface{}{
-		common.WithTrivy:       false,
-		common.WithChartMuseum: false,
-		common.WithNotary:      false,
+		common.WithTrivy:  false,
+		common.WithNotary: false,
 	}
 	Init()
 
@@ -130,10 +129,6 @@ func TestConfig(t *testing.T) {
 
 	if _, err := OnlyAdminCreateProject(ctx); err != nil {
 		t.Fatalf("failed to get onldy admin create project: %v", err)
-	}
-
-	if _, err := Email(ctx); err != nil {
-		t.Fatalf("failed to get email settings: %v", err)
 	}
 
 	if _, err := Database(); err != nil {

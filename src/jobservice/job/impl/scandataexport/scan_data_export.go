@@ -47,7 +47,8 @@ func (sde *ScanDataExport) MaxCurrency() uint {
 // still less that the number declared by the method 'MaxFails'.
 //
 // Returns:
-//  true for retry and false for none-retry
+//
+//	true for retry and false for none-retry
 func (sde *ScanDataExport) ShouldRetry() bool {
 	return true
 }
@@ -66,8 +67,8 @@ func (sde *ScanDataExport) Validate(params job.Parameters) error {
 // params map[string]interface{} : parameters with key-pair style for the job execution.
 //
 // Returns:
-//  error if failed to run. NOTES: If job is stopped or cancelled, a specified error should be returned
 //
+//	error if failed to run. NOTES: If job is stopped or cancelled, a specified error should be returned
 func (sde *ScanDataExport) Run(ctx job.Context, params job.Parameters) error {
 	if _, ok := params[export.JobModeKey]; !ok {
 		return errors.Errorf("no mode specified for scan data export execution")
@@ -109,24 +110,25 @@ func (sde *ScanDataExport) Run(ctx job.Context, params job.Parameters) error {
 		return err
 	}
 	logger.Infof("Export Job Id = %v. CSV file size: %d", params["JobId"], stat.Size())
+	// earlier return and update status message if the file size is 0, unnecessary to push a empty system artifact.
+	if stat.Size() == 0 {
+		extra := map[string]interface{}{
+			export.StatusMessageAttribute: "No vulnerabilities found or matched",
+		}
+		updateErr := sde.updateExecAttributes(ctx, params, extra)
+		if updateErr != nil {
+			logger.Errorf("Export Job Id = %v. Error when updating the exec extra attributes 'status_message' to 'No vulnerabilities found or matched': %v", params["JobId"], updateErr)
+		}
+
+		logger.Infof("Export Job Id = %v. Exported CSV file is empty, skip to push system artifact, exit job", params["JobId"])
+		return nil
+	}
+
 	csvExportArtifactRecord := model.SystemArtifact{Repository: repositoryName, Digest: hash.String(), Size: stat.Size(), Type: "ScanData_CSV", Vendor: strings.ToLower(export.Vendor)}
 	artID, err := sde.sysArtifactMgr.Create(ctx.SystemContext(), &csvExportArtifactRecord, csvFile)
 	if err != nil {
 		logger.Errorf(
 			"Export Job Id = %v. Error when persisting report file %s to persistent storage: %v", params["JobId"], fileName, err)
-		// NOTICE: this is a tentative solution to resolve error to push empty blob to S3 storage driver,
-		// should unify the behaviour for different drivers.
-		// Temporary set the status message to extra attributes, then the API handler will fetch it and combined to response for better experience.
-		if stat.Size() == 0 {
-			extra := map[string]interface{}{
-				"status_message": "No vulnerabilities found or matched",
-			}
-			updateErr := sde.updateExecAttributes(ctx, params, extra)
-			if updateErr != nil {
-				logger.Errorf("Export Job Id = %v. Error when updating the exec extra attributes 'status_message' to 'No vulnerabilities found or matched': %v", params["JobId"], updateErr)
-			}
-		}
-
 		return err
 	}
 
@@ -182,14 +184,7 @@ func (sde *ScanDataExport) writeCsvFile(ctx job.Context, params job.Parameters, 
 			return err
 		}
 
-		// check if any projects are specified. If not then fetch all the projects
-		// of which the current user is a project admin.
-		projectIds, err := sde.filterProcessor.ProcessProjectFilter(systemContext, filterCriteria.UserName, filterCriteria.Projects)
-
-		if err != nil {
-			return err
-		}
-
+		projectIds := filterCriteria.Projects
 		if len(projectIds) == 0 {
 			return nil
 		}

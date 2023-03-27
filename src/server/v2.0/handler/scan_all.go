@@ -20,6 +20,8 @@ import (
 	"strings"
 
 	"github.com/go-openapi/runtime/middleware"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/goharbor/harbor/src/common/rbac"
 	"github.com/goharbor/harbor/src/controller/scan"
@@ -204,11 +206,11 @@ func (s *scanAllAPI) createOrUpdateScanAllSchedule(ctx context.Context, cronType
 		}
 	}
 
-	return s.scheduler.Schedule(ctx, scan.VendorTypeScanAll, 0, cronType, cron, scan.ScanAllCallback, nil, nil)
+	return s.scheduler.Schedule(ctx, job.ScanAllVendorType, 0, cronType, cron, scan.ScanAllCallback, nil, nil)
 }
 
 func (s *scanAllAPI) getScanAllSchedule(ctx context.Context) (*scheduler.Schedule, error) {
-	query := q.New(q.KeyWords{"vendor_type": scan.VendorTypeScanAll})
+	query := q.New(q.KeyWords{"vendor_type": job.ScanAllVendorType})
 	schedules, err := s.scheduler.ListSchedules(ctx, query.First(q.NewSort("creation_time", true)))
 	if err != nil {
 		return nil, err
@@ -256,14 +258,14 @@ func (s *scanAllAPI) getMetrics(ctx context.Context, trigger ...string) (*models
 		}
 
 		sts.Ongoing = !job.Status(execution.Status).Final() || sts.Total != sts.Completed
-		sts.Trigger = strings.Title(strings.ToLower(execution.Trigger))
+		sts.Trigger = cases.Title(language.English).String(strings.ToLower(execution.Trigger))
 	}
 
 	return sts, nil
 }
 
 func (s *scanAllAPI) getLatestScanAllExecution(ctx context.Context, trigger ...string) (*task.Execution, error) {
-	query := q.New(q.KeyWords{"vendor_type": scan.VendorTypeScanAll})
+	query := q.New(q.KeyWords{"vendor_type": job.ScanAllVendorType})
 	if len(trigger) > 0 {
 		query.Keywords["trigger"] = trigger[0]
 	}

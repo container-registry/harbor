@@ -18,7 +18,7 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/beego/beego"
+	"github.com/beego/beego/v2/server/web"
 
 	"github.com/goharbor/harbor/src/pkg/distribution"
 	"github.com/goharbor/harbor/src/server/middleware"
@@ -70,17 +70,15 @@ var (
 		middleware.MethodAndPathSkipper(http.MethodPost, match("^/service/notifications/jobs/adminjob/"+numericRegexp.String())),
 		middleware.MethodAndPathSkipper(http.MethodPost, match("^/service/notifications/jobs/replication/"+numericRegexp.String())),
 		middleware.MethodAndPathSkipper(http.MethodPost, match("^/service/notifications/jobs/replication/task/"+numericRegexp.String())),
-		middleware.MethodAndPathSkipper(http.MethodPost, match("^/service/notifications/jobs/webhook/"+numericRegexp.String())),
 		middleware.MethodAndPathSkipper(http.MethodPost, match("^/service/notifications/jobs/retention/task/"+numericRegexp.String())),
 		middleware.MethodAndPathSkipper(http.MethodPost, match("^/service/notifications/jobs/schedules/"+numericRegexp.String())),
-		middleware.MethodAndPathSkipper(http.MethodPost, match("^/service/notifications/jobs/webhook/"+numericRegexp.String())),
 		pingSkipper,
 	}
 )
 
 // MiddleWares returns global middlewares
-func MiddleWares() []beego.MiddleWare {
-	return []beego.MiddleWare{
+func MiddleWares() []web.MiddleWare {
+	return []web.MiddleWare{
 		url.Middleware(),
 		mergeslash.Middleware(),
 		trace.Middleware(),

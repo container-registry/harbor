@@ -56,24 +56,6 @@ export class SystemSettingsComponent implements OnInit {
         );
     }
 
-    get tokenExpirationValue() {
-        return this.currentConfig.token_expiration.value;
-    }
-
-    set tokenExpirationValue(v) {
-        // convert string to number
-        this.currentConfig.token_expiration.value = +v;
-    }
-
-    get robotTokenExpirationValue() {
-        return this.currentConfig.robot_token_duration.value;
-    }
-
-    set robotTokenExpirationValue(v) {
-        // convert string to number
-        this.currentConfig.robot_token_duration.value = +v;
-    }
-
     robotNamePrefixEditable(): boolean {
         return (
             this.currentConfig &&
@@ -112,7 +94,9 @@ export class SystemSettingsComponent implements OnInit {
                 prop === 'notification_enable' ||
                 prop === 'robot_name_prefix' ||
                 prop === 'audit_log_forward_endpoint' ||
-                prop === 'skip_audit_log_database'
+                prop === 'skip_audit_log_database' ||
+                prop === 'session_timeout' ||
+                prop === 'scanner_skip_update_pulltime'
             ) {
                 changes[prop] = allChanges[prop];
             }

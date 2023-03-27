@@ -30,7 +30,6 @@ import (
 	"github.com/goharbor/harbor/src/common/utils"
 	"github.com/goharbor/harbor/src/controller/p2p/preheat"
 	projectcontroller "github.com/goharbor/harbor/src/controller/project"
-	"github.com/goharbor/harbor/src/lib/config"
 	"github.com/goharbor/harbor/src/lib/errors"
 	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/pkg/scheduler"
@@ -137,7 +136,11 @@ func (b *BaseController) SendPermissionError() {
 // WriteJSONData writes the JSON data to the client.
 func (b *BaseController) WriteJSONData(object interface{}) {
 	b.Data["json"] = object
-	b.ServeJSON()
+	if err := b.ServeJSON(); err != nil {
+		log.Errorf("failed to serve json, %v", err)
+		b.SendInternalServerError(err)
+		return
+	}
 }
 
 // WriteYamlData writes the yaml data to the client.
@@ -162,16 +165,15 @@ func (b *BaseController) PopulateUserSession(u models.User) {
 		b.SendError(err)
 		return
 	}
-	b.SetSession(userSessionKey, u)
+	if err := b.SetSession(userSessionKey, u); err != nil {
+		log.Errorf("failed to set user into session, error: %v", err)
+		b.SendError(err)
+		return
+	}
 }
 
 // Init related objects/configurations for the API controllers
 func Init() error {
-	// init chart controller
-	if err := initChartController(); err != nil {
-		return err
-	}
-
 	p2pPreheatCallbackFun := func(ctx context.Context, p string) error {
 		param := &preheat.TriggerParam{}
 		if err := json.Unmarshal([]byte(p), param); err != nil {
@@ -183,19 +185,4 @@ func Init() error {
 	err := scheduler.RegisterCallbackFunc(preheat.SchedulerCallback, p2pPreheatCallbackFun)
 
 	return err
-}
-
-func initChartController() error {
-	// If chart repository is not enabled then directly return
-	if !config.WithChartMuseum() {
-		return nil
-	}
-
-	chartCtl, err := initializeChartController()
-	if err != nil {
-		return err
-	}
-
-	chartController = chartCtl
-	return nil
 }

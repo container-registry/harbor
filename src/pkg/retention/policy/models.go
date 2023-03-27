@@ -15,7 +15,7 @@
 package policy
 
 import (
-	"github.com/beego/beego/validation"
+	"github.com/beego/beego/v2/core/validation"
 
 	"github.com/goharbor/harbor/src/lib/selector/selectors/doublestar"
 	"github.com/goharbor/harbor/src/pkg/retention/policy/rule"
@@ -31,6 +31,9 @@ const (
 
 	// TriggerSettingsCron cron
 	TriggerSettingsCron = "cron"
+
+	// TriggerSettingNextScheduledTime next_scheduled_time
+	TriggerSettingNextScheduledTime = "next_scheduled_time"
 
 	// ScopeLevelProject project
 	ScopeLevelProject = "project"

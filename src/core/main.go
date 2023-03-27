@@ -26,7 +26,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/beego/beego"
+	"github.com/beego/beego/v2/server/web"
 
 	"github.com/goharbor/harbor/src/common/dao"
 	common_http "github.com/goharbor/harbor/src/common/http"
@@ -35,6 +35,7 @@ import (
 	"github.com/goharbor/harbor/src/controller/health"
 	"github.com/goharbor/harbor/src/controller/registry"
 	"github.com/goharbor/harbor/src/controller/systemartifact"
+	"github.com/goharbor/harbor/src/controller/task"
 	"github.com/goharbor/harbor/src/core/api"
 	_ "github.com/goharbor/harbor/src/core/auth/authproxy"
 	_ "github.com/goharbor/harbor/src/core/auth/db"
@@ -56,6 +57,7 @@ import (
 	"github.com/goharbor/harbor/src/migration"
 	_ "github.com/goharbor/harbor/src/pkg/accessory/model/base"
 	_ "github.com/goharbor/harbor/src/pkg/accessory/model/cosign"
+	_ "github.com/goharbor/harbor/src/pkg/accessory/model/subject"
 	"github.com/goharbor/harbor/src/pkg/audit"
 	dbCfg "github.com/goharbor/harbor/src/pkg/config/db"
 	_ "github.com/goharbor/harbor/src/pkg/config/inmemory"
@@ -120,8 +122,10 @@ func main() {
 	runMode := flag.String("mode", "normal", "The harbor-core container run mode, it could be normal, migrate or skip-migrate, default is normal")
 	flag.Parse()
 
-	beego.BConfig.WebConfig.Session.SessionOn = true
-	beego.BConfig.WebConfig.Session.SessionName = config.SessionCookieName
+	web.BConfig.WebConfig.Session.SessionOn = true
+	web.BConfig.WebConfig.Session.SessionName = config.SessionCookieName
+	web.BConfig.MaxMemory = 1 << 35     // (32GB)
+	web.BConfig.MaxUploadSize = 1 << 35 // (32GB)
 
 	redisURL := os.Getenv("_REDIS_URL_CORE")
 	if len(redisURL) > 0 {
@@ -130,8 +134,8 @@ func main() {
 			panic("bad _REDIS_URL")
 		}
 
-		beego.BConfig.WebConfig.Session.SessionProvider = session.HarborProviderName
-		beego.BConfig.WebConfig.Session.SessionProviderConfig = redisURL
+		web.BConfig.WebConfig.Session.SessionProvider = session.HarborProviderName
+		web.BConfig.WebConfig.Session.SessionProviderConfig = redisURL
 
 		log.Info("initializing cache ...")
 		if err := cache.Initialize(u.Scheme, redisURL); err != nil {
@@ -141,7 +145,7 @@ func main() {
 		// enable config cache explicitly when the cache is ready
 		dbCfg.EnableConfigCache()
 	}
-	beego.AddTemplateExt("htm")
+	web.AddTemplateExt("htm")
 
 	log.Info("initializing configurations...")
 	config.Init()
@@ -223,12 +227,12 @@ func main() {
 		iTLSCertPath := os.Getenv("INTERNAL_TLS_CERT_PATH")
 
 		log.Infof("load client key: %s client cert: %s", iTLSKeyPath, iTLSCertPath)
-		beego.BConfig.Listen.EnableHTTP = false
-		beego.BConfig.Listen.EnableHTTPS = true
-		beego.BConfig.Listen.HTTPSPort = 8443
-		beego.BConfig.Listen.HTTPSKeyFile = iTLSKeyPath
-		beego.BConfig.Listen.HTTPSCertFile = iTLSCertPath
-		beego.BeeApp.Server.TLSConfig = common_http.NewServerTLSConfig()
+		web.BConfig.Listen.EnableHTTP = false
+		web.BConfig.Listen.EnableHTTPS = true
+		web.BConfig.Listen.HTTPSPort = 8443
+		web.BConfig.Listen.HTTPSKeyFile = iTLSKeyPath
+		web.BConfig.Listen.HTTPSCertFile = iTLSCertPath
+		web.BeeApp.Server.TLSConfig = common_http.NewServerTLSConfig()
 	}
 
 	log.Infof("Version: %s, Git commit: %s", version.ReleaseVersion, version.GitCommit)
@@ -246,7 +250,7 @@ func main() {
 		options := []retry.Option{
 			retry.InitialInterval(time.Millisecond * 500),
 			retry.MaxInterval(time.Second * 10),
-			retry.Timeout(time.Minute),
+			retry.Timeout(time.Minute * 5),
 			retry.Callback(func(err error, sleep time.Duration) {
 				log.Debugf("failed to ping %s, retry after %s : %v", url, sleep, err)
 			}),
@@ -255,9 +259,15 @@ func main() {
 			log.Errorf("failed to check the jobservice health status: timeout, error: %v", err)
 			return
 		}
+
+		// schedule system artifact cleanup job
 		systemartifact.ScheduleCleanupTask(ctx)
+		// schedule system execution sweep job
+		if err := task.ScheduleSweepJob(ctx); err != nil {
+			log.Errorf("failed to schedule system execution sweep job, error: %v", err)
+		}
 	}()
-	beego.RunWithMiddleWares("", middlewares.MiddleWares()...)
+	web.RunWithMiddleWares("", middlewares.MiddleWares()...)
 }
 
 const (

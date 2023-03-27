@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"regexp"
 	"strings"
@@ -15,6 +15,7 @@ import (
 	"github.com/goharbor/harbor/src/common/job/models"
 	"github.com/goharbor/harbor/src/jobservice/job"
 	"github.com/goharbor/harbor/src/lib/config"
+	"github.com/goharbor/harbor/src/lib/log"
 )
 
 var (
@@ -119,7 +120,7 @@ func (d *DefaultClient) SubmitJob(jd *models.JobData) (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
@@ -148,7 +149,7 @@ func (d *DefaultClient) GetJobLog(uuid string) ([]byte, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +174,7 @@ func (d *DefaultClient) GetExecutions(periodicJobID string) ([]job.Stats, error)
 		return nil, err
 	}
 	defer resp.Body.Close()
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -226,11 +227,12 @@ func (d *DefaultClient) GetJobServiceConfig() (*job.Config, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
+		log.Infof("failed to get job service config from jobservice:8080/api/v1/config, job service container version maybe mismatch")
 		return nil, &commonhttp.Error{
 			Code:    resp.StatusCode,
 			Message: string(data),

@@ -34,7 +34,6 @@ linters:
     - revive
     - whitespace
     - bodyclose
-    - deadcode
     - errcheck
     # - gosec
     - gosimple
@@ -43,12 +42,10 @@ linters:
     # - noctx
     # - rowserrcheck
     - staticcheck
-    - structcheck
     - stylecheck
     # - unconvert
     # - unparam
-    - unused
-    - varcheck
+    # - unused  // disabled due to too many false positive check and limited support golang 1.19 https://github.com/dominikh/go-tools/issues/1282
  
 run:
   skip-files:
@@ -56,7 +53,7 @@ run:
     - ".*test.go"
   skip-dirs:
     - "testing"
-  timeout: 5m
+  timeout: 20m
 
 issue:
   max-same-issues: 0

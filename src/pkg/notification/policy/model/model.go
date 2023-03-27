@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/beego/beego/orm"
+	"github.com/beego/beego/v2/client/orm"
 )
 
 func init() {
@@ -81,4 +81,5 @@ type EventTarget struct {
 	Address        string `json:"address"`
 	AuthHeader     string `json:"auth_header,omitempty"`
 	SkipCertVerify bool   `json:"skip_cert_verify"`
+	PayloadFormat  string `json:"payload_format,omitempty"`
 }

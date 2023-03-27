@@ -84,6 +84,11 @@ func LDAPGroupConf(ctx context.Context) (*cfgModels.GroupConf, error) {
 	}, nil
 }
 
+// SessionTimeout returns the session timeout for web (in minute).
+func SessionTimeout(ctx context.Context) int64 {
+	return DefaultMgr().Get(ctx, common.SessionTimeout).GetInt64()
+}
+
 // TokenExpiration returns the token expiration time (in minute)
 func TokenExpiration(ctx context.Context) (int, error) {
 	return DefaultMgr().Get(ctx, common.TokenExpiration).GetInt(), nil
@@ -106,25 +111,6 @@ func OnlyAdminCreateProject(ctx context.Context) (bool, error) {
 		return true, err
 	}
 	return DefaultMgr().Get(ctx, common.ProjectCreationRestriction).GetString() == common.ProCrtRestrAdmOnly, nil
-}
-
-// Email returns email server settings
-func Email(ctx context.Context) (*cfgModels.Email, error) {
-	mgr := DefaultMgr()
-	err := mgr.Load(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &cfgModels.Email{
-		Host:     mgr.Get(ctx, common.EmailHost).GetString(),
-		Port:     mgr.Get(ctx, common.EmailPort).GetInt(),
-		Username: mgr.Get(ctx, common.EmailUsername).GetString(),
-		Password: mgr.Get(ctx, common.EmailPassword).GetString(),
-		SSL:      mgr.Get(ctx, common.EmailSSL).GetBool(),
-		From:     mgr.Get(ctx, common.EmailFrom).GetString(),
-		Identity: mgr.Get(ctx, common.EmailIdentity).GetString(),
-		Insecure: mgr.Get(ctx, common.EmailInsecure).GetBool(),
-	}, nil
 }
 
 // UAASettings returns the UAASettings to access UAA service.
@@ -184,6 +170,7 @@ func OIDCSetting(ctx context.Context) (*cfgModels.OIDCSetting, error) {
 		ClientID:           mgr.Get(ctx, common.OIDCCLientID).GetString(),
 		ClientSecret:       mgr.Get(ctx, common.OIDCClientSecret).GetString(),
 		GroupsClaim:        mgr.Get(ctx, common.OIDCGroupsClaim).GetString(),
+		GroupFilter:        mgr.Get(ctx, common.OIDCGroupFilter).GetString(),
 		AdminGroup:         mgr.Get(ctx, common.OIDCAdminGroup).GetString(),
 		RedirectURL:        extEndpoint + common.OIDCCallbackPath,
 		Scope:              scope,
@@ -261,4 +248,10 @@ func AuditLogForwardEndpoint(ctx context.Context) string {
 // SkipAuditLogDatabase returns the audit log forward endpoint
 func SkipAuditLogDatabase(ctx context.Context) bool {
 	return DefaultMgr().Get(ctx, common.SkipAuditLogDatabase).GetBool()
+}
+
+// ScannerSkipUpdatePullTime returns the scanner skip update pull time setting
+func ScannerSkipUpdatePullTime(ctx context.Context) bool {
+	log.Infof("skip_update_pull_time:%v", DefaultMgr().Get(ctx, common.ScannerSkipUpdatePullTime).GetBool())
+	return DefaultMgr().Get(ctx, common.ScannerSkipUpdatePullTime).GetBool()
 }
