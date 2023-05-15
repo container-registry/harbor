@@ -1,16 +1,16 @@
-//  Copyright Project Harbor Authors
+// Copyright Project Harbor Authors
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//    http://www.apache.org/licenses/LICENSE-2.0
 //
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package handler
 
@@ -406,7 +406,7 @@ func (n *webhookAPI) validateTargets(policy *policy_model.Policy) (bool, error) 
 	if len(policy.Targets) == 0 {
 		return false, errors.New(nil).WithMessage("empty notification target with policy %s", policy.Name).WithCode(errors.BadRequestCode)
 	}
-	for _, target := range policy.Targets {
+	for i, target := range policy.Targets {
 		url, err := utils.ParseEndpoint(target.Address)
 		if err != nil {
 			return false, errors.New(err).WithCode(errors.BadRequestCode)
@@ -425,6 +425,10 @@ func (n *webhookAPI) validateTargets(policy *policy_model.Policy) (bool, error) 
 
 		if len(target.PayloadFormat) > 0 && !isPayloadFormatSupported(target.PayloadFormat) {
 			return false, errors.New(nil).WithMessage("unsupported payload format type: %s", target.PayloadFormat).WithCode(errors.BadRequestCode)
+		}
+		// set payload format to Default is not specified when the type is http
+		if len(target.PayloadFormat) == 0 && target.Type == "http" {
+			policy.Targets[i].PayloadFormat = "Default"
 		}
 	}
 	return true, nil
