@@ -10,12 +10,9 @@ import (
 	"github.com/goharbor/harbor/src/lib/errors"
 	regadapter "github.com/goharbor/harbor/src/pkg/reg/adapter"
 	"github.com/goharbor/harbor/src/pkg/reg/model"
-	"github.com/google/go-containerregistry/pkg/crane"
 	"io"
 	"net/http"
 	"net/url"
-	"path"
-	"time"
 )
 
 var (
@@ -136,38 +133,12 @@ func (a adapter) PrepareForPush(resources []*model.Resource) error {
 		return errors.Wrap(err, "failed to marshal result")
 	}
 
-	img, err := crane.Image(map[string][]byte{
-		"artifacts.json": data,
-	})
-	if err != nil {
-		return fmt.Errorf("image create failed: %v", err)
-	}
-
-	destinationRepo = fmt.Sprintf("%s/%s", path.Dir(destinationRepo), "state")
-	//
-
-	err = crane.Push(img, destinationRepo, crane.WithTransport(a))
-	if err != nil {
-		return fmt.Errorf("push image failed: %v", err)
-	}
-
-	err = crane.Tag(destinationRepo, fmt.Sprintf("%d", time.Now().Unix()), crane.WithTransport(a))
-	if err != nil {
-		return fmt.Errorf("tag image failed: %v", err)
-	}
-
-	err = crane.Tag(destinationRepo, "latest", crane.WithTransport(a))
-	if err != nil {
-		return fmt.Errorf("tag image failed: %v", err)
-	}
-
 	responseBody := bytes.NewBuffer(data)
 	resp, err := http.Post(registry.URL, "application/json", responseBody)
 	if err != nil {
 		return errors.Wrap(err, "failed to post result")
 	}
 	defer resp.Body.Close()
-
 	return nil
 }
 
@@ -232,7 +203,6 @@ func (a adapter) ListTags(repository string) (tags []string, err error) {
 }
 
 func newAdapter(_ *model.Registry) (regadapter.Adapter, error) {
-
 	return &adapter{
 		httpClient: &http.Client{},
 	}, nil
