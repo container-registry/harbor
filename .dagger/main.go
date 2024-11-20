@@ -41,63 +41,29 @@ type Harbor struct {
 	Source *dagger.Directory
 }
 
-func (m *Harbor) BuildAllImages(ctx context.Context) []*dagger.Container {
-	var buildImages []*dagger.Container
-	for _, platform := range SupportedPlatforms {
+func (m *Harbor) BuildImages(ctx context.Context,
+	// +optional
+	// +default=["linux/arm64","linux/amd64"]
+	platforms []string,
+	// +optional
+	// +default=["core", "jobservice", "registryctl", "cmd/exporter", "cmd/standalone-db-migrator"]
+	packages []string) []*dagger.Container {
+	var images []*dagger.Container
+	for _, platform := range platforms {
 		for _, pkg := range packages {
-			image := m.BuildImage(ctx, platform, pkg)
-			buildImages = append(buildImages, image)
+			img := m.buildImage(ctx, platform, pkg)
+			images = append(images, img)
 		}
-		// build portal
 	}
-	return buildImages
+	return images
 }
 
-func (m *Harbor) buildAllImages(ctx context.Context) []*BuildMetadata {
-	var buildMetadata []*BuildMetadata
-	for _, platform := range SupportedPlatforms {
-		for _, pkg := range packages {
-			image := m.buildImage(ctx, platform, pkg)
-			buildImages = append(buildImages, image)
-		}
-		// build portal
-	}
-	return buildImages
-}
-
-func (m *Harbor) BuildImage(ctx context.Context, platform string, pkg string) *dagger.Container {
+func (m *Harbor) buildImage(ctx context.Context, platform string, pkg string) *dagger.Container {
 	bc := m.buildBinary(ctx, platform, pkg)
 	img := dag.Container(dagger.ContainerOpts{Platform: dagger.Platform(platform)}).
 		WithFile("/"+pkg, bc.Container.File(bc.BinaryPath)).
 		WithEntrypoint([]string{"/" + pkg})
 	return img
-}
-
-func (m *Harbor) BuildAllBinaries(ctx context.Context) *dagger.Directory {
-	output := dag.Directory()
-	builds := m.buildAllBinaries(ctx)
-	for _, build := range builds {
-		output = output.WithFile(build.BinaryPath, build.Container.File(build.BinaryPath))
-	}
-	return output
-
-}
-
-func (m *Harbor) buildAllBinaries(ctx context.Context) []*BuildMetadata {
-	var buildContainers []*BuildMetadata
-	for _, platform := range SupportedPlatforms {
-		for _, pkg := range packages {
-			buildContainer := m.buildBinary(ctx, platform, pkg)
-			buildContainers = append(buildContainers, buildContainer)
-		}
-		// build portal
-	}
-	return buildContainers
-}
-
-func (m *Harbor) BuildBinary(ctx context.Context, platform string, pkg string) *dagger.File {
-	build := m.buildBinary(ctx, platform, pkg)
-	return build.Container.File(build.BinaryPath)
 }
 
 func (m *Harbor) buildBinary(ctx context.Context, platform string, pkg string) *BuildMetadata {
